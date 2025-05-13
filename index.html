@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>27 Nakshatra & Zodiac 3D - V7 (Features)</title>
   <style>
     body {
@@ -84,10 +85,62 @@
       background-color: rgba(0, 0, 0, 0.2);
       border-radius: 4px;
     }
+
+    /* --- MOON PHASE STYLES --- */
+    #moon-phase-container {
+      position: absolute;
+      top: 15px;
+      /* Adjust as needed */
+      right: 15px;
+      /* Adjust as needed */
+      padding: 8px;
+      background: rgba(30, 30, 50, 0.85);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      /* Stack image and text vertically */
+      align-items: center;
+      gap: 5px;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      color: white;
+      min-width: 200px;
+      min-height: 250px;
+    }
+
+    #moon-phase-image {
+      width: 150px;
+      /* Adjust size as needed */
+      height: 150px;
+      /* Adjust size as needed */
+      border-radius: 50%;
+      /* Circular image */
+      object-fit: cover;
+      /* Ensure image covers the area nicely */
+      background-color: #111;
+      /* Dark background in case images have transparency */
+      border: 5px solid rgba(30, 30, 50, 1);
+      /* box-shadow: inset 0px 0px 0px 20px rgba(30, 30, 50, 1);
+      box-shadow: outset 0px 0px 0px 20px rgba(30, 30, 50, 1); */
+    }
+
+    #moon-phase-name {
+      font-size: 21px;
+      /* Smaller font for the name */
+      text-align: center;
+      max-width: 150px;
+    }
   </style>
 </head>
 
 <body>
+  <!-- MOON PHASE DISPLAY ELEMENT -->
+  <div id="moon-phase-container">
+    <img id="moon-phase-image" src="" alt="Moon Phase" title="Moon Phase">
+    <span id="moon-phase-name">Loading...</span>
+  </div>
   <div id="controls-container">
     <div class="control-group">
       <button id="playPauseBtn">Pause</button>
@@ -100,6 +153,28 @@
       <span id="speedDisplay">Speed: 1s = 1 Day</span>
       <button id="speedUpBtn" title="Faster">+</button>
       <button id="resetSpeedBtn" title="Reset Speed">Reset</button>
+    </div>
+    <div class="control-group" style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="min-width: 40px; color: #ffcc66;">Sun:</span>
+          <span id="sunPositionDisplay"
+            style="min-width: 80px; background-color: rgba(0, 0, 0, 0.2); padding: 3px 6px; border-radius: 4px; font-size: 13px;">0°
+            0' 0"</span>
+          <input type="range" id="sunPositionSlider" min="0" max="360" value="0" style="width: 120px;"
+            title="Adjust Sun Position" aria-label="Adjust Sun Position">
+          <span id="sunPositionText" style="font-size: 18px; color: #ffcc66; min-width: 150px;"></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="min-width: 40px; color: #aaccff;">Moon:</span>
+          <span id="moonPositionDisplay"
+            style="min-width: 80px; background-color: rgba(0, 0, 0, 0.2); padding: 3px 6px; border-radius: 4px; font-size: 13px;">0°
+            0' 0"</span>
+          <input type="range" id="moonPositionSlider" min="0" max="360" value="0" style="width: 120px;"
+            title="Adjust Moon Position" aria-label="Adjust Moon Position">
+          <span id="moonPositionText" style="font-size: 18px; color: #aaccff; min-width: 150px;"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -131,6 +206,7 @@
     const zodiacInnerRadius = 21;
     const zodiacOuterRadius = 23;
     const nakshatraInnerRadius = 23
+    const nakshatraOuterPadaRadius = 24
     const nakshatraOuterRadius = 25
     const sunOrbitRadius = 23;
 
@@ -146,11 +222,17 @@
 
     // --- Nakshatras ---
     const nakshatras = [
-      'අස්විද Aśvin', 'බෙරණ', 'කැති Kārttika', 'රෙහෙණ', 'මුවසිරිස Mārgaśīrṣa', 'අද', 'පුනාවස', 'පුස Pauṣa',
-      'අස්ලිය', 'මා Māgha', 'පුවපල්', 'උත්‍රපල් Phālguna', 'හත', 'සිත Chitra', 'සා',
-      'විසා (වෛශාක්‍ය)', 'අනුර', 'දෙට Jyeshtha', 'මුල', 'පුවසල Āṣāḍha', 'උත්‍රසල',
-      'සුවන Shravana', 'දෙනට', 'සියාවස', 'පුවපුටුප Bhādrapada', 'උත්‍රපුටුප', 'රේවතී'
+      'අස්විද', 'බෙරණ', 'කැති', 'රෙහෙණ', 'මුවසිරිස', 'අද', 'පුනාවස', 'පුස',
+      'අස්ලිය', 'මා', 'පුවපල්', 'උත්‍රපල්', 'හත', 'සිත', 'සා',
+      'විසා (වෛශාක්‍ය)', 'අනුර', 'දෙට', 'මුල', 'පුවසල', 'උත්‍රසල',
+      'සුවන', 'දෙනට', 'සියාවස', 'පුවපුටුප', 'උත්‍රපුටුප', 'රේවතී'
     ];
+    const lunarMonthNames = [
+      'වප්', '', 'ඉල්', '', 'උඳුවප්', '', '', 'දුරුතු',
+      '', 'නවම්', '', 'මැදින්', '', 'බක්', '',
+      'වෙසක්', '', 'පොසොන්', '', 'ඇසල', '',
+      'නිකිණි', '', '', 'බිනර', '', ''
+    ]
     const nakshatraGroup = new THREE.Group();
     const nakshatraDividersGroup = new THREE.Group();
 
@@ -172,6 +254,17 @@
       sprite.position.set(x, 0, z);
       nakshatraGroup.add(sprite);
 
+      // Text plane for lunar month names
+      const monthText = lunarMonthNames[i];
+      if (monthText.trim() !== '') { // Skip if the text is empty
+        const monthSprite = createTextPlane(monthText, 18, '#ffff00'); // New function for text on planes
+        // place it under the nakshatra text centered
+        monthSprite.position.set(x, 0, z + 1); // Adjust Y position to be below the nakshatra
+        monthSprite.rotation.x = -PI / 2; // Rotate to face the camera
+        nakshatraGroup.add(monthSprite);
+      }
+
+
       // Divider Line
       const points = [];
       const innerPoint = new THREE.Vector3(nakshatraInnerRadius * cos(thetaStart), 0, nakshatraInnerRadius * sin(thetaStart));
@@ -180,6 +273,18 @@
       const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
       const dividerLine = new THREE.Line(lineGeometry, nakshatraDividerMaterial);
       nakshatraDividersGroup.add(dividerLine);
+
+      // Divider Line for Padas
+      for (let j = 1; j <= 3; j++) {
+        const padaPoints = [];
+        const thetaStartPada = thetaStart + (j * NAKSHATRA_ARC_RADIANS) / 4;
+        const innerPointPada = new THREE.Vector3(nakshatraInnerRadius * cos(thetaStartPada), 0, nakshatraInnerRadius * sin(thetaStartPada));
+        const outerPointPada = new THREE.Vector3(nakshatraOuterPadaRadius * cos(thetaStartPada), 0, nakshatraOuterPadaRadius * sin(thetaStartPada));
+        padaPoints.push(innerPointPada, outerPointPada);
+        const lineGeometryPada = new THREE.BufferGeometry().setFromPoints(padaPoints);
+        const dividerLinePada = new THREE.Line(lineGeometryPada, nakshatraDividerMaterial);
+        nakshatraDividersGroup.add(dividerLinePada);
+      }
     });
     scene.add(nakshatraGroup);
     scene.add(nakshatraDividersGroup);
@@ -236,6 +341,7 @@
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), sunMaterial);
     scene.add(sun);
 
+
     const moonTexture = textureLoader.load('https://threejs.org/examples/textures/planets/moon_1024.jpg');
     const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture, roughness: 0.9, metalness: 0.05 });
     const moon = new THREE.Mesh(new THREE.SphereGeometry(earthRadius * 0.27, 32, 32), moonMaterial);
@@ -260,13 +366,27 @@
 
     // --- Simulation Variables & Constants ---
     let clock = new THREE.Clock();
-    let animateFlag = true;
+    let animateFlag = true; // Start with animation running
     let simulationTime = 0;
     let speedDirection = 1; // +1 for forward, -1 for reverse
     const moonPeriodDays = 27.3;
     const daysPerYear = 365.25;
     const sunPeriodDays = daysPerYear;
     const earthRadiansPerDay = 2 * PI;
+
+    // Manual position control variables
+    let manualSunPosition = null;
+    let manualSunAjustment = 0;
+    let manualMoonPosition = null;
+    let manualMoonAdjustment = 0;
+    let isManualPositionActive = false;
+    let lastAdjustedObject = null; // Track which object was last adjusted
+
+    // Debug flag
+    const debug = true; // Set to true to enable console logs
+
+    // Log initial state
+    console.log("Initial animation state:", animateFlag ? "RUNNING" : "PAUSED");
 
     // --- Orbit Lines --- (Code remains the same)
     const createOrbitLine = (radius, color, segments = 120) => { /* ... */
@@ -292,13 +412,79 @@
     const speedDownBtn = document.getElementById('speedDownBtn');
     const resetSpeedBtn = document.getElementById('resetSpeedBtn');
     const speedDisplay = document.getElementById('speedDisplay');
+
+    // Position controls
+    const sunPositionSlider = document.getElementById('sunPositionSlider');
+    const moonPositionSlider = document.getElementById('moonPositionSlider');
+    const sunPositionDisplay = document.getElementById('sunPositionDisplay');
+    const moonPositionDisplay = document.getElementById('moonPositionDisplay');
+    const sunPositionText = document.getElementById('sunPositionText');
+    const moonPositionText = document.getElementById('moonPositionText');
     const speedPresets = [
       { label: '1s = 1 Hour', value: 1 / 24 }, { label: '1s = 6 Hours', value: 6 / 24 }, { label: '1s = 1 Day', value: 1 },
       { label: '1s = 1 Week', value: 7 }, { label: '1s = 1 Month', value: 30 }, { label: '1s = 1 Year', value: daysPerYear }
     ];
     let currentSpeedIndex = 2; const defaultSpeedIndex = 2;
 
-    function updatePlayPauseButton() { playPauseBtn.textContent = animateFlag ? 'Pause' : 'Play'; }
+    // --- Moon Phase Display Elements & Config ---
+    const moonPhaseImageElement = document.getElementById('moon-phase-image');
+    const moonPhaseNameElement = document.getElementById('moon-phase-name');
+
+    const moonPhaseImageBasePath = "/images/moon_phases/"; // <<< USER: ADJUST THIS PATH & PROVIDE IMAGES
+    const moonPhaseImageFiles = [];
+    for (let i = 0; i < 30; i++) {
+      // zero pad the number to 2 digits
+      const paddedIndex = String(i).padStart(2, '0');
+      moonPhaseImageFiles.push(`phase_${paddedIndex}.png`);
+    }
+    const moonPhaseNames = [
+      "පුර පෑලවිය",
+      "පුර දියවක",
+      "පුර තියවක",
+      "පුර ජලවක",
+      "පුර විසේනිය",
+      "පුර සැටවක",
+      "පුර සතවක",
+      "පුර අටවක",
+      "පුර නවවක",
+      "පුර දසවක",
+      "පුර එකොළොස්වක",
+      "පුර දොළොස්වක",
+      "පුර තෙළෙස්වක",
+      "පුර තුදුස්වක",
+      "පුර පසළොස්වක",
+      "අව පෑලවිය",
+      "අව දියවක",
+      "අව තියවක",
+      "අව ජලවක",
+      "අව විසේනිය",
+      "අව සැටවක",
+      "අව සතවක",
+      "අව අටවක",
+      "අව නවවක",
+      "අව දසවක",
+      "අව එකොළොස්වක",
+      "අව දොළොස්වක",
+      "අව තෙළෙස්වක",
+      "අව තුදුස්වක",
+      "අමාවක"
+    ];
+    // Preload moon phase images (optional, but good practice)
+    // Preload moon phase images (optional, but good practice)
+    const moonPhasePreloadedImages = [];
+    if (typeof Image !== 'undefined') {
+      moonPhaseImageFiles.forEach(file => {
+        const img = new Image();
+        img.src = moonPhaseImageBasePath + file;
+        moonPhasePreloadedImages.push(img);
+      });
+    }
+
+    // This function is no longer used, but kept for reference
+    function updatePlayPauseButton() {
+      playPauseBtn.textContent = animateFlag ? 'Pause' : 'Play';
+      if (debug) console.log("Button text updated to:", playPauseBtn.textContent);
+    }
     function updateDirectionButton() { // Function to update reverse button text
       reverseBtn.textContent = speedDirection > 0 ? 'Forward' : 'Reverse';
     }
@@ -331,10 +517,224 @@
     window.addEventListener('keydown', handleKeyDown);
 
     // Initial UI setup
-    updatePlayPauseButton();
+    playPauseBtn.textContent = animateFlag ? 'Pause' : 'Play';
+    console.log("Initial button text set to:", playPauseBtn.textContent);
     updateDirectionButton();
     updateSpeedDisplayAndButtons();
 
+    // --- Position Control Functions ---
+    // Convert degrees to radians
+    function degreesToRadians(degrees) {
+      return degrees * (PI / 180);
+    }
+
+    // Convert radians to degrees
+    function radiansToDegrees(radians) {
+      // Normalize to 0-2π range
+      const normalizedRadians = radians % (2 * PI);
+      const positiveRadians = normalizedRadians < 0 ? normalizedRadians + 2 * PI : normalizedRadians;
+      return positiveRadians * (180 / PI);
+    }
+
+    // Format degrees as degrees, minutes, seconds
+    function formatDegrees(degrees) {
+      const totalSeconds = degrees * 3600;
+      const degreesInt = Math.floor(degrees);
+      const minutesFloat = (degrees - degreesInt) * 60;
+      const minutesInt = Math.floor(minutesFloat);
+      const secondsInt = Math.floor((minutesFloat - minutesInt) * 60);
+      return `${degreesInt}° ${minutesInt}' ${secondsInt}"`;
+    }
+
+    // Formated degree in sinhala rashi names
+    function formatDegreesSinhala(degrees) {
+      const totalSeconds = degrees * 3600;
+      const degreesInt = Math.floor(degrees);
+      const minutesFloat = (degrees - degreesInt) * 60;
+      const minutesInt = Math.floor(minutesFloat);
+      const secondsInt = Math.floor((minutesFloat - minutesInt) * 60);
+      const rashiIndex = Math.floor(degreesInt / 30);
+      const rashiNames = ['මේෂ', 'වෘෂභ', 'මිථුන', 'කටක', 'සිංහ', 'කන්‍යා', 'තුලා', 'වෘෂ්චික', 'ධනු', 'මකර', 'කුම්භ', 'මීන'];
+      const rashiName = rashiNames[rashiIndex];
+      const rashiRemainingDegrees = degreesInt % 30;
+      return `${rashiName} ${rashiRemainingDegrees}° ${minutesInt}' ${secondsInt}"`;
+    }
+
+    // --- MOON PHASE CALCULATION AND DISPLAY FUNCTION ---
+    function updateMoonPhaseDisplay(currentSunAngle, currentMoonAngle) {
+      if (!moonPhaseImageElement || !moonPhaseNameElement) return; // Safety check
+
+      let elongation = (currentMoonAngle - currentSunAngle);
+      // Normalize elongation to 0-2PI
+      elongation = (elongation % (2 * PI) + 2 * PI) % (2 * PI);
+      const elongationDegrees = elongation * (180 / PI); // Convert to degrees 0-360
+
+      // Determine phase index (0-29 for 30 phases)
+      // Each phase covers 360/30 = 12 degrees.
+      const degreesPerPhase = 360 / 30;
+      let phaseIndex = Math.floor(elongationDegrees / degreesPerPhase);
+
+      // Ensure phaseIndex is within bounds (0 to 29)
+      // Math.floor(360 / 12) = 30. If elongation is exactly 360 (or 2*PI), it should be phase 0.
+      phaseIndex = phaseIndex % 30;
+
+      moonPhaseImageElement.src = moonPhaseImageBasePath + moonPhaseImageFiles[phaseIndex];
+      moonPhaseImageElement.alt = moonPhaseNames[phaseIndex];
+      moonPhaseImageElement.title = `${moonPhaseNames[phaseIndex]} (Elong: ${elongationDegrees.toFixed(1)}°)`;
+      moonPhaseNameElement.textContent = moonPhaseNames[phaseIndex];
+    }
+
+    // Update position displays
+    function updatePositionDisplays() {
+      // Get current angles
+      let sunAngle, moonAngle;
+
+      if (manualSunPosition !== null) {
+        sunAngle = degreesToRadians(manualSunPosition);
+      } else {
+        sunAngle = (simulationTime / sunPeriodDays) * 2 * PI;
+      }
+
+      if (manualMoonPosition !== null) {
+        moonAngle = degreesToRadians(manualMoonPosition);
+      } else {
+        moonAngle = (simulationTime / moonPeriodDays) * 2 * PI;
+      }
+
+      // Convert to degrees and format
+      const sunDegrees = radiansToDegrees(sunAngle);
+      const moonDegrees = radiansToDegrees(moonAngle);
+
+      sunPositionDisplay.textContent = formatDegrees(sunDegrees);
+      moonPositionDisplay.textContent = formatDegrees(moonDegrees);
+
+      sunPositionText.textContent = formatDegreesSinhala(sunDegrees);
+      moonPositionText.textContent = formatDegreesSinhala(moonDegrees);
+
+      // Update sliders if not being dragged
+      if (!isManualPositionActive) {
+        sunPositionSlider.value = sunDegrees;
+        moonPositionSlider.value = moonDegrees;
+      }
+      updateMoonPhaseDisplay(sunAngle, moonAngle); // Update moon phase
+    }
+
+    // Handle slider changes
+    sunPositionSlider.addEventListener('input', function () {
+      if (debug) console.log("Sun slider adjusted to:", this.value);
+
+      // Store the current positions
+      manualSunPosition = parseFloat(this.value);
+      lastAdjustedObject = 'sun'; // Track that sun was last adjusted
+
+      // Calculate current moon angle in degrees if not already set
+      if (manualMoonPosition === null) {
+        const moonX = moon.position.x;
+        const moonZ = moon.position.z;
+        const moonAngle = Math.atan2(moonZ, moonX);
+        manualMoonPosition = radiansToDegrees(moonAngle);
+        if (debug) console.log("Captured current moon position:", manualMoonPosition);
+      }
+
+      // Update positions immediately
+      const sunAngle = degreesToRadians(manualSunPosition);
+      sun.position.set(sunOrbitRadius * cos(sunAngle), 0, sunOrbitRadius * sin(sunAngle));
+      sunLight.position.copy(sun.position);
+
+      // Update displays 
+      updatePositionDisplays();
+
+      // Pause animation if it's running
+      if (animateFlag) {
+        if (debug) console.log("Pausing animation due to sun slider adjustment");
+        animateFlag = false;
+        updatePlayPauseButton();
+      }
+
+      manualSunAjustment = sunAngle - currentSunPosition();
+      if (manualSunAjustment < 0) {
+        manualSunAjustment += PI * 2;
+      }
+    });
+
+    moonPositionSlider.addEventListener('input', function () {
+      if (debug) console.log("Moon slider adjusted to:", this.value);
+
+      // Store the current positions
+      manualMoonPosition = parseFloat(this.value);
+      lastAdjustedObject = 'moon'; // Track that moon was last adjusted
+
+      // Calculate current sun angle in degrees if not already set
+      if (manualSunPosition === null) {
+        const sunX = sun.position.x;
+        const sunZ = sun.position.z;
+        const sunAngle = Math.atan2(sunZ, sunX);
+        manualSunPosition = radiansToDegrees(sunAngle);
+        if (debug) console.log("Captured current sun position:", manualSunPosition);
+      }
+
+      // Update positions immediately
+      const moonAngle = degreesToRadians(manualMoonPosition);
+      moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
+
+      // Update displays
+      updatePositionDisplays();
+
+      // Pause animation if it's running
+      if (animateFlag) {
+        if (debug) console.log("Pausing animation due to moon sl ider adjustment");
+        animateFlag = false;
+        updatePlayPauseButton();
+      }
+      manualMoonAdjustment = moonAngle - currentMoonPosition();
+      if (manualMoonAdjustment < 0) {
+        manualMoonAdjustment += PI * 2;
+      }
+    });
+    // Handle play/pause button click
+    playPauseBtn.addEventListener('click', function () {
+      // Get the current button text to determine the current state
+      const currentButtonText = playPauseBtn.textContent;
+      console.log("Play/Pause button clicked. Current button text:", currentButtonText);
+
+      if (currentButtonText === "Pause") {
+        // Button says "Pause", so we're currently running and want to pause
+        console.log("Pausing animation");
+        animateFlag = false;
+        playPauseBtn.textContent = "Play";
+      } else {
+        // Button says "Play", so we're currently paused and want to resume
+        console.log("Resuming animation");
+
+        // Check if we have manual positions set
+        if (manualSunPosition !== null || manualMoonPosition !== null) {
+          console.log("Manual positions detected:",
+            "Sun:", manualSunPosition,
+            "Moon:", manualMoonPosition);
+
+          // Calculate what simulationTime would give this position
+          if (lastAdjustedObject === 'sun' && manualSunPosition !== null) {
+            const sunAngle = degreesToRadians(manualSunPosition);
+            simulationTime = (sunAngle * sunPeriodDays) / (2 * PI);
+            console.log("Setting simulation time based on sun position:", simulationTime);
+          } else if (lastAdjustedObject === 'moon' && manualMoonPosition !== null) {
+            const moonAngle = degreesToRadians(manualMoonPosition);
+            simulationTime = (moonAngle * moonPeriodDays) / (2 * PI);
+            console.log("Setting simulation time based on moon position:", simulationTime);
+          }
+
+          // Clear manual positions so animation can continue from current position
+          console.log("Clearing manual positions");
+          manualSunPosition = null;
+          manualMoonPosition = null;
+        }
+
+        animateFlag = true;
+        playPauseBtn.textContent = "Pause";
+      }
+
+      console.log("New animation state:", animateFlag ? "RUNNING" : "PAUSED");
+    });
 
     // --- Mouse Wheel Zoom ---
     function handleMouseWheel(event) {
@@ -358,6 +758,21 @@
     }
     renderer.domElement.addEventListener('wheel', handleMouseWheel, { passive: false }); // Add wheel listener to canvas
 
+    function currentMoonPosition() {
+      return (simulationTime / moonPeriodDays) * 2 * PI;
+    }
+
+    function currentSunPosition() {
+      return (simulationTime / sunPeriodDays) * 2 * PI;
+    }
+
+    function getMoonAngle() {
+      return currentMoonPosition() + manualMoonAdjustment;
+    }
+
+    function getSunAngle() {
+      return currentSunPosition() + manualSunAjustment;
+    }
 
     // --- animate function ---
     function animate() {
@@ -370,19 +785,29 @@
         const simulationDaysElapsed = delta * currentSpeedValue * speedDirection;
         simulationTime += simulationDaysElapsed;
 
-        // Moon Orbit
-        const moonAngle = (simulationTime / moonPeriodDays) * 2 * PI;
-        moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
+        // Calculate angles based on simulation time
+        const moonAngle = getMoonAngle();
+        const sunAngle = getSunAngle();
 
-        // Sun Orbit
-        const sunAngle = (simulationTime / sunPeriodDays) * 2 * PI;
+        // Update positions
+        moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
         sun.position.set(sunOrbitRadius * cos(sunAngle), 0, sunOrbitRadius * sin(sunAngle));
 
         // Lighting Update
         sunLight.position.copy(sun.position);
 
+        // Update position displays
+        updatePositionDisplays();
+
         // Earth Rotation
         earth.rotation.y += earthRadiansPerDay * simulationDaysElapsed;
+
+        // Log animation progress occasionally (every 100 frames)
+        if (debug && Math.floor(simulationTime * 100) % 100 === 0) {
+          console.log("Animation running. Simulation time:", simulationTime.toFixed(2),
+            "Sun angle:", radiansToDegrees(sunAngle).toFixed(2),
+            "Moon angle:", radiansToDegrees(moonAngle).toFixed(2));
+        }
       }
 
       renderer.render(scene, camera);
@@ -476,17 +901,16 @@
     }
 
 
-    // --- Handle window resize --- (Code remains the same)
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(window.devicePixelRatio);
-      // No need to re-render here, animate loop does it
     }, false);
 
-    // Start the animation loop
     animate();
+
+    updatePositionDisplays();
   </script>
 </body>
 
