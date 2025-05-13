@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>27 Nakshatra & Zodiac 3D - V7 (Features)</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0a0a1a;
+      overflow: hidden;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #controls-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      /* Slightly reduced gap */
+      padding: 12px 20px;
+      background: rgba(30, 30, 50, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      align-items: center;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      /* Slightly reduced gap */
+    }
+
+    button {
+      padding: 8px 12px;
+      /* Adjusted padding */
+      background: #4a4a7a;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      /* Slightly smaller font */
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      min-width: 50px;
+      /* Minimum width for consistency */
+      text-align: center;
+    }
+
+    button:hover {
+      background: #5a5a8a;
+    }
+
+    button:active {
+      background: #3a3a6a;
+      transform: scale(0.95);
+    }
+
+    button:disabled {
+      background: #33334c;
+      color: #777799;
+      cursor: not-allowed;
+    }
+
+    #speedDisplay {
+      color: #e0e0ff;
+      font-size: 13px;
+      /* Slightly smaller font */
+      min-width: 120px;
+      /* Adjusted width */
+      text-align: center;
+      padding: 5px;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="controls-container">
+    <div class="control-group">
+      <button id="playPauseBtn">Pause</button>
+    </div>
+    <div class="control-group">
+      <button id="reverseBtn" title="Toggle Direction">Forward</button>
+    </div>
+    <div class="control-group">
+      <button id="speedDownBtn" title="Slower">-</button>
+      <span id="speedDisplay">Speed: 1s = 1 Day</span>
+      <button id="speedUpBtn" title="Faster">+</button>
+      <button id="resetSpeedBtn" title="Reset Speed">Reset</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+  <script>
+    const { PI, cos, sin, min, max } = Math;
+
+    let scene = new THREE.Scene();
+    let camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    let renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.appendChild(renderer.domElement);
+
+    const textureLoader = new THREE.TextureLoader();
+
+    // --- Shared Constants ---
+    const NAKSHATRA_COUNT = 27;
+    const ZODIAC_COUNT = 12;
+    const NAKSHATRA_ARC_RADIANS = (2 * PI) / NAKSHATRA_COUNT;
+    const ZODIAC_ARC_RADIANS = (2 * PI) / ZODIAC_COUNT;
+
+    // Radii for different elements
+    const earthRadius = 2;
+    const moonOrbitRadius = earthRadius * 3.5;
+    const zodiacInnerRadius = 21;
+    const zodiacOuterRadius = 23;
+    const nakshatraInnerRadius = 23
+    const nakshatraOuterRadius = 25
+    const sunOrbitRadius = 23;
+
+    // --- Materials ---
+    const nakshatraArcMaterial = new THREE.MeshBasicMaterial({ color: 0x555599, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
+    const nakshatraArcMaterialAlt = new THREE.MeshBasicMaterial({ color: 0x6666AA, side: THREE.DoubleSide, transparent: true, opacity: 0.30 });
+    const nakshatraDividerMaterial = new THREE.LineBasicMaterial({ color: 0xAAAAFF, transparent: true, opacity: 0.5 });
+
+    const zodiacArcMaterial = new THREE.MeshBasicMaterial({ color: 0x998855, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
+    const zodiacArcMaterialAlt = new THREE.MeshBasicMaterial({ color: 0xAA9966, side: THREE.DoubleSide, transparent: true, opacity: 0.30 });
+    const zodiacDividerMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFCC, transparent: true, opacity: 0.5 });
+
+
+    // --- Nakshatras ---
+    const nakshatras = [
+      'අස්විද Aśvin', 'බෙරණ', 'කැති Kārttika', 'රෙහෙණ', 'මුවසිරිස Mārgaśīrṣa', 'අද', 'පුනාවස', 'පුස Pauṣa',
+      'අස්ලිය', 'මා Māgha', 'පුවපල්', 'උත්‍රපල් Phālguna', 'හත', 'සිත Chitra', 'සා',
+      'විසා (වෛශාක්‍ය)', 'අනුර', 'දෙට Jyeshtha', 'මුල', 'පුවසල Āṣāḍha', 'උත්‍රසල',
+      'සුවන Shravana', 'දෙනට', 'සියාවස', 'පුවපුටුප Bhādrapada', 'උත්‍රපුටුප', 'රේවතී'
+    ];
+    const nakshatraGroup = new THREE.Group();
+    const nakshatraDividersGroup = new THREE.Group();
+
+    nakshatras.forEach((name, i) => {
+      const thetaStart = i * NAKSHATRA_ARC_RADIANS;
+      const thetaLength = NAKSHATRA_ARC_RADIANS;
+      const midAngle = thetaStart + thetaLength / 2;
+
+      // Arc geometry
+      const arcGeometry = new THREE.RingGeometry(nakshatraInnerRadius, nakshatraOuterRadius, 3, 1, thetaStart, thetaLength);
+      const arcMesh = new THREE.Mesh(arcGeometry, i % 2 === 0 ? nakshatraArcMaterial : nakshatraArcMaterialAlt);
+      nakshatraGroup.add(arcMesh);
+
+      // Text sprite (Keeping Nakshatras as sprites for now, simpler)
+      const textRadius = nakshatraOuterRadius * 1.04; // Position outside
+      const x = textRadius * cos(midAngle);
+      const z = textRadius * sin(midAngle);
+      const sprite = createTextSprite(name, 24, '#ddddff'); // Existing function
+      sprite.position.set(x, 0, z);
+      nakshatraGroup.add(sprite);
+
+      // Divider Line
+      const points = [];
+      const innerPoint = new THREE.Vector3(nakshatraInnerRadius * cos(thetaStart), 0, nakshatraInnerRadius * sin(thetaStart));
+      const outerPoint = new THREE.Vector3(nakshatraOuterRadius * cos(thetaStart), 0, nakshatraOuterRadius * sin(thetaStart));
+      points.push(innerPoint, outerPoint);
+      const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const dividerLine = new THREE.Line(lineGeometry, nakshatraDividerMaterial);
+      nakshatraDividersGroup.add(dividerLine);
+    });
+    scene.add(nakshatraGroup);
+    scene.add(nakshatraDividersGroup);
+
+
+    // --- Vedic Zodiac Signs ---
+    const zodiacSigns = [ /* ... names ... */
+      'මේෂ', 'වෘෂභ', 'මිථුන', 'කටක', 'සිංහ', 'කන්‍යා',
+      'තුලා', 'වෘෂ්චික', 'ධනු', 'මකර', 'කුම්භ', 'මීන'
+    ];
+    const zodiacGroup = new THREE.Group();
+    const zodiacDividersGroup = new THREE.Group(); // Group for divider lines
+
+    zodiacSigns.forEach((name, i) => {
+      const thetaStart = i * ZODIAC_ARC_RADIANS;
+      const thetaLength = ZODIAC_ARC_RADIANS;
+      const midAngle = thetaStart + thetaLength / 2;
+
+      // Arc geometry
+      const arcGeometry = new THREE.RingGeometry(zodiacInnerRadius, zodiacOuterRadius, 4, 1, thetaStart, thetaLength);
+      const arcMesh = new THREE.Mesh(arcGeometry, i % 2 === 0 ? zodiacArcMaterial : zodiacArcMaterialAlt);
+      zodiacGroup.add(arcMesh);
+
+      // Text sprite
+      const textRadius = zodiacOuterRadius * 0.92;
+      const x = textRadius * cos(midAngle);
+      const z = textRadius * sin(midAngle);
+      const sprite = createTextSprite(name, 27, '#ffeecc');
+      sprite.position.set(x, 0, z);
+      zodiacGroup.add(sprite);
+
+      // *** Add Divider Line at the start angle (thetaStart) ***
+      const points = [];
+      const innerPoint = new THREE.Vector3(zodiacInnerRadius * cos(thetaStart), 0, zodiacInnerRadius * sin(thetaStart));
+      const outerPoint = new THREE.Vector3(zodiacOuterRadius * cos(thetaStart), 0, zodiacOuterRadius * sin(thetaStart));
+      points.push(innerPoint, outerPoint);
+
+      const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const dividerLine = new THREE.Line(lineGeometry, zodiacDividerMaterial);
+      zodiacDividersGroup.add(dividerLine);
+    });
+    scene.add(zodiacGroup);
+    scene.add(zodiacDividersGroup); // Add dividers to the scene
+
+
+    // --- Earth, Sun, Moon --- (Code remains the same)
+    const earthTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+    const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture, roughness: 0.7, metalness: 0.1 });
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthMaterial);
+    scene.add(earth);
+
+    const sunTexture = textureLoader.load('/images/sun.png'); // Ensure path is correct
+    const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture, toneMapped: false });
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), sunMaterial);
+    scene.add(sun);
+
+    const moonTexture = textureLoader.load('https://threejs.org/examples/textures/planets/moon_1024.jpg');
+    const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture, roughness: 0.9, metalness: 0.05 });
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(earthRadius * 0.27, 32, 32), moonMaterial);
+    scene.add(moon);
+
+
+    // --- Lighting --- (Code remains the same)
+    scene.add(new THREE.AmbientLight(0x606080, 0.5));
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    scene.add(sunLight);
+    sunLight.target = earth;
+
+
+    // --- Camera ---
+    const initialCameraY = 60;
+    const minCameraY = 15; // Minimum zoom distance
+    const maxCameraY = 150; // Maximum zoom distance
+    camera.position.set(0, initialCameraY, 0);
+    camera.up.set(0, 0, -1); // Point Z towards the user initially
+    camera.lookAt(0, 0, 0);
+
+
+    // --- Simulation Variables & Constants ---
+    let clock = new THREE.Clock();
+    let animateFlag = true;
+    let simulationTime = 0;
+    let speedDirection = 1; // +1 for forward, -1 for reverse
+    const moonPeriodDays = 27.3;
+    const daysPerYear = 365.25;
+    const sunPeriodDays = daysPerYear;
+    const earthRadiansPerDay = 2 * PI;
+
+    // --- Orbit Lines --- (Code remains the same)
+    const createOrbitLine = (radius, color, segments = 120) => { /* ... */
+      const points = [];
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * PI * 2;
+        points.push(new THREE.Vector3(radius * cos(angle), 0, radius * sin(angle)));
+      }
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.3 });
+      return new THREE.Line(geometry, material);
+    };
+    const moonOrbitLine = createOrbitLine(moonOrbitRadius, 0xaaaaaa);
+    scene.add(moonOrbitLine);
+    const sunOrbitLine = createOrbitLine(sunOrbitRadius, 0xcccc66);
+    scene.add(sunOrbitLine);
+
+
+    // --- CONTROLS ---
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const reverseBtn = document.getElementById('reverseBtn'); // Get reverse button
+    const speedUpBtn = document.getElementById('speedUpBtn');
+    const speedDownBtn = document.getElementById('speedDownBtn');
+    const resetSpeedBtn = document.getElementById('resetSpeedBtn');
+    const speedDisplay = document.getElementById('speedDisplay');
+    const speedPresets = [
+      { label: '1s = 1 Hour', value: 1 / 24 }, { label: '1s = 6 Hours', value: 6 / 24 }, { label: '1s = 1 Day', value: 1 },
+      { label: '1s = 1 Week', value: 7 }, { label: '1s = 1 Month', value: 30 }, { label: '1s = 1 Year', value: daysPerYear }
+    ];
+    let currentSpeedIndex = 2; const defaultSpeedIndex = 2;
+
+    function updatePlayPauseButton() { playPauseBtn.textContent = animateFlag ? 'Pause' : 'Play'; }
+    function updateDirectionButton() { // Function to update reverse button text
+      reverseBtn.textContent = speedDirection > 0 ? 'Forward' : 'Reverse';
+    }
+    function togglePlayPause() { animateFlag = !animateFlag; updatePlayPauseButton(); }
+    function toggleDirection() { // Function to toggle direction
+      speedDirection *= -1;
+      updateDirectionButton();
+      updateSpeedDisplayAndButtons(); // Update speed display too
+    }
+    function updateSpeedDisplayAndButtons() {
+      const currentPreset = speedPresets[currentSpeedIndex];
+      const directionLabel = speedDirection < 0 ? ' (Reverse)' : ''; // Add label for reverse
+      speedDisplay.textContent = `Speed: ${currentPreset.label}${directionLabel}`;
+      speedDownBtn.disabled = currentSpeedIndex === 0;
+      speedUpBtn.disabled = currentSpeedIndex === speedPresets.length - 1;
+    }
+
+    playPauseBtn.addEventListener('click', togglePlayPause);
+    reverseBtn.addEventListener('click', toggleDirection); // Add listener for reverse button
+    speedUpBtn.addEventListener('click', () => { currentSpeedIndex = min(speedPresets.length - 1, currentSpeedIndex + 1); updateSpeedDisplayAndButtons(); });
+    speedDownBtn.addEventListener('click', () => { currentSpeedIndex = max(0, currentSpeedIndex - 1); updateSpeedDisplayAndButtons(); });
+    resetSpeedBtn.addEventListener('click', () => {
+      currentSpeedIndex = defaultSpeedIndex;
+      speedDirection = 1; // Also reset direction
+      updateSpeedDisplayAndButtons();
+      updateDirectionButton(); // Update direction button text
+    });
+
+    function handleKeyDown(event) { if (event.code === 'Space') { event.preventDefault(); togglePlayPause(); } }
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Initial UI setup
+    updatePlayPauseButton();
+    updateDirectionButton();
+    updateSpeedDisplayAndButtons();
+
+
+    // --- Mouse Wheel Zoom ---
+    function handleMouseWheel(event) {
+      event.preventDefault(); // Prevent default page scrolling
+
+      const zoomIntensity = 0.05; // How much to zoom per scroll tick
+      const delta = event.deltaY;
+
+      let zoomFactor;
+      if (delta < 0) { // Scrolling up -> Zoom In
+        zoomFactor = 1 - zoomIntensity;
+      } else { // Scrolling down -> Zoom Out
+        zoomFactor = 1 + zoomIntensity;
+      }
+
+      // Adjust camera Y position, clamping within limits
+      camera.position.y = max(minCameraY, min(maxCameraY, camera.position.y * zoomFactor));
+
+      // No need for updateProjectionMatrix() when changing position
+      camera.lookAt(0, 0, 0); // Ensure camera still looks at the center
+    }
+    renderer.domElement.addEventListener('wheel', handleMouseWheel, { passive: false }); // Add wheel listener to canvas
+
+
+    // --- animate function ---
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+
+      if (animateFlag) {
+        const currentSpeedValue = speedPresets[currentSpeedIndex].value;
+        // *** Apply speedDirection here ***
+        const simulationDaysElapsed = delta * currentSpeedValue * speedDirection;
+        simulationTime += simulationDaysElapsed;
+
+        // Moon Orbit
+        const moonAngle = (simulationTime / moonPeriodDays) * 2 * PI;
+        moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
+
+        // Sun Orbit
+        const sunAngle = (simulationTime / sunPeriodDays) * 2 * PI;
+        sun.position.set(sunOrbitRadius * cos(sunAngle), 0, sunOrbitRadius * sin(sunAngle));
+
+        // Lighting Update
+        sunLight.position.copy(sun.position);
+
+        // Earth Rotation
+        earth.rotation.y += earthRadiansPerDay * simulationDaysElapsed;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // --- Utility Functions ---
+
+    // Existing function for Sprites (used for Nakshatras)
+    function createTextSprite(message, fontSize = 30, color = '#ffffff') {
+      const effectiveScale = window.devicePixelRatio || 1;
+      const padding = 10 * (fontSize / 30);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      const textMetrics = ctx.measureText(message);
+      const textWidth = textMetrics.width;
+      canvas.width = (textWidth + padding * 2) * effectiveScale;
+      canvas.height = (fontSize + padding * 2) * effectiveScale;
+      ctx.scale(effectiveScale, effectiveScale);
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      ctx.shadowBlur = 3 * effectiveScale;
+      ctx.shadowOffsetX = 1 * effectiveScale;
+      ctx.shadowOffsetY = 1 * effectiveScale;
+      ctx.fillText(message, (textWidth + padding * 2) / 2, (fontSize + padding * 2) / 2);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      // Use SpriteMaterial for Sprites
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true, alphaTest: 0.1, depthTest: false, sizeAttenuation: true });
+      const sprite = new THREE.Sprite(material);
+      const spriteScaleFactor = 0.05; // Adjust this factor as needed
+      const spriteWidth = canvas.width / effectiveScale * spriteScaleFactor * (fontSize / 30);
+      const spriteHeight = canvas.height / effectiveScale * spriteScaleFactor * (fontSize / 30);
+      sprite.scale.set(spriteWidth, spriteHeight, 1);
+      return sprite;
+    }
+
+    // *** NEW Function for Text on Planes (used for Zodiac) ***
+    function createTextPlane(message, fontSize = 30, color = '#ffffff') {
+      const effectiveScale = window.devicePixelRatio || 1;
+      const padding = 10 * (fontSize / 30);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      const textMetrics = ctx.measureText(message);
+      const textWidth = textMetrics.width;
+      // Base canvas dimensions on unscaled metrics
+      const canvasWidth = textWidth + padding * 2;
+      const canvasHeight = fontSize + padding * 2;
+
+      canvas.width = canvasWidth * effectiveScale;
+      canvas.height = canvasHeight * effectiveScale;
+
+      ctx.scale(effectiveScale, effectiveScale);
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      ctx.shadowBlur = 3 * effectiveScale;
+      ctx.shadowOffsetX = 1 * effectiveScale;
+      ctx.shadowOffsetY = 1 * effectiveScale;
+      // Draw text centered in the unscaled dimensions
+      ctx.fillText(message, canvasWidth / 2, canvasHeight / 2);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+      // Use MeshBasicMaterial for Planes
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        alphaTest: 0.1, // Helps with transparent edges
+        depthTest: false, // Render text on top easily (optional)
+        side: THREE.DoubleSide // Show text from both sides
+      });
+
+      // Calculate plane size based on unscaled canvas dimensions
+      const planeScaleFactor = 0.05; // Adjust this factor to control text size in 3D space
+      const planeWidth = canvasWidth * planeScaleFactor;
+      const planeHeight = canvasHeight * planeScaleFactor;
+
+      const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+      const mesh = new THREE.Mesh(geometry, material);
+      return mesh;
+    }
+
+
+    // --- Handle window resize --- (Code remains the same)
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      // No need to re-render here, animate loop does it
+    }, false);
+
+    // Start the animation loop
+    animate();
+  </script>
+</body>
+
+</html>
