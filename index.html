@@ -123,7 +123,10 @@
 <body>
   <!-- MOON PHASE DISPLAY ELEMENT -->
   <div id="moon-phase-container">
-    <img id="moon-phase-image" src="" alt="Moon Phase" title="Moon Phase">
+    <canvas id="moon-phase-3d" width="170" height="170"
+      style="border-radius: 50%; background: #111; display: block; margin: 0 auto; box-shadow: 0 1px 10px #0006;"></canvas>
+
+
     <span id="moon-phase-name">Loading...</span>
   </div>
   <div id="controls-container">
@@ -176,6 +179,7 @@
   <script>
     const { PI, cos, sin, min, max } = Math;
 
+    // ----- MAIN SCENE SETUP -----
     let scene = new THREE.Scene();
     let camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     let renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -193,8 +197,6 @@
     const ZODIAC_COUNT = 12;
     const NAKSHATRA_ARC_RADIANS = (2 * PI) / NAKSHATRA_COUNT;
     const ZODIAC_ARC_RADIANS = (2 * PI) / ZODIAC_COUNT;
-
-    // Radii for different elements
     const earthRadius = 2;
     const moonOrbitRadius = earthRadius * 3.5;
     const zodiacInnerRadius = 21;
@@ -326,25 +328,23 @@
     scene.add(zodiacDividersGroup); // Add dividers to the scene
 
 
-    // --- Earth, Sun, Moon --- (Code remains the same)
+    // --- Earth, Sun, Moon (Texturing) ---
     const earthTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
     const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture, roughness: 0.7, metalness: 0.1 });
     const earth = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthMaterial);
     scene.add(earth);
 
-    const sunTexture = textureLoader.load('/images/sun.png'); // Ensure path is correct
+    const sunTexture = textureLoader.load('/images/sun.png');
     const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture, toneMapped: false });
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), sunMaterial);
     scene.add(sun);
-
 
     const moonTexture = textureLoader.load('https://threejs.org/examples/textures/planets/moon_1024.jpg');
     const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture, roughness: 0.9, metalness: 0.05 });
     const moon = new THREE.Mesh(new THREE.SphereGeometry(earthRadius * 0.27, 32, 32), moonMaterial);
     scene.add(moon);
 
-
-    // --- Lighting --- (Code remains the same)
+    // --- Lighting ---
     scene.add(new THREE.AmbientLight(0x606080, 0.5));
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
     scene.add(sunLight);
@@ -431,6 +431,8 @@
     const daysPerYear = 365.25;
     const sunPeriodDays = daysPerYear;
     const earthRadiansPerDay = 2 * PI;
+    // moon always faces the earth
+    const moonRadiansPerDay = earthRadiansPerDay / moonPeriodDays;
 
     // Manual position control variables
     let manualSunPosition = null;
@@ -832,44 +834,6 @@
       return currentSunPosition() + manualSunAjustment;
     }
 
-    // --- animate function ---
-    function animate() {
-      requestAnimationFrame(animate);
-      const delta = clock.getDelta();
-
-      if (animateFlag) {
-        const currentSpeedValue = speedPresets[currentSpeedIndex].value;
-        // *** Apply speedDirection here ***
-        const simulationDaysElapsed = delta * currentSpeedValue * speedDirection;
-        simulationTime += simulationDaysElapsed;
-
-        // Calculate angles based on simulation time
-        const moonAngle = getMoonAngle();
-        const sunAngle = getSunAngle();
-
-        // Update positions
-        moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
-        sun.position.set(sunOrbitRadius * cos(sunAngle), 0, sunOrbitRadius * sin(sunAngle));
-
-        // Lighting Update
-        sunLight.position.copy(sun.position);
-
-        // Update position displays
-        updatePositionDisplays();
-
-        // Earth Rotation
-        earth.rotation.y += earthRadiansPerDay * simulationDaysElapsed;
-
-        // Log animation progress occasionally (every 100 frames)
-        if (debug && Math.floor(simulationTime * 100) % 100 === 0) {
-          console.log("Animation running. Simulation time:", simulationTime.toFixed(2),
-            "Sun angle:", radiansToDegrees(sunAngle).toFixed(2),
-            "Moon angle:", radiansToDegrees(moonAngle).toFixed(2));
-        }
-      }
-
-      renderer.render(scene, camera);
-    }
 
     // --- Utility Functions ---
 
@@ -907,6 +871,95 @@
       return sprite;
     }
 
+    // =========================
+    // === MINI MOON PHASE 3D VIEW ===
+    // =========================
+
+    // (Add a <canvas id="moon-phase-3d" width="170" height="170"></canvas> in your #moon-phase-container)
+
+    // 1. Setup mini Three.js scene for the 3D moon phase
+    const moonPhase3dCanvas = document.getElementById('moon-phase-3d');
+    const moonPhase3dRenderer = new THREE.WebGLRenderer({
+      canvas: moonPhase3dCanvas,
+      alpha: true,
+      antialias: true
+    });
+    moonPhase3dRenderer.setClearColor(0x111111, 0);
+
+    const moon3dScene = new THREE.Scene();
+    const moon3dCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 10);
+    moon3dCamera.position.set(0, 0, 3);
+    moon3dCamera.lookAt(0, 0, 0);
+
+    // Use the same moonMaterial for fidelity
+    const moon3d = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 64, 64),
+      moonMaterial
+    );
+    moon3dScene.add(moon3d);
+
+    const moon3dLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    moon3dScene.add(moon3dLight);
+    moon3dScene.add(new THREE.AmbientLight(0x303040, 0.7));
+
+    // ==============================
+    // ========== ANIMATION =========
+    // ==============================
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+
+      if (animateFlag) {
+        const currentSpeedValue = speedPresets[currentSpeedIndex].value;
+        const simulationDaysElapsed = delta * currentSpeedValue * speedDirection;
+        simulationTime += simulationDaysElapsed;
+
+        const moonAngle = getMoonAngle();
+        const sunAngle = getSunAngle();
+
+        moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
+        sun.position.set(sunOrbitRadius * cos(sunAngle), 0, sunOrbitRadius * sin(sunAngle));
+        sunLight.position.copy(sun.position);
+
+        updatePositionDisplays();
+        earth.rotation.y += earthRadiansPerDay * simulationDaysElapsed;
+        // since moon always faces the earth, we have to rotate it same angle 
+        moon.rotation.y = -moonAngle;
+      }
+
+      // --- 3D Moon Mini Phase View Update ---
+      // Camera is positioned as if you are at the earth, looking at the moon
+      const miniMoonAngle = getMoonAngle();
+      const miniSunAngle = getSunAngle();
+
+      // Camera looks from earth to moon
+      const camDistance = 6;
+      const camX = Math.cos(miniMoonAngle) * camDistance;
+      const camZ = Math.sin(miniMoonAngle) * camDistance;
+      moon3dCamera.position.set(camX, 0, camZ);
+      moon3dCamera.up.set(0, 1, 0);
+      moon3dCamera.lookAt(0, 0, 0);
+
+      // Sunlight illuminates from sun's direction
+      const sunX = Math.cos(miniSunAngle) * camDistance * -  1;
+      const sunZ = Math.sin(miniSunAngle) * camDistance * - 1;
+      moon3dLight.position.set(sunX, 0, sunZ);
+      moon3dLight.target.position.set(0, 0, 0);
+      moon3dLight.target.updateMatrixWorld();
+
+      // (Optional: If you want to keep north-up, set .rotation.y = 0)
+      moon3d.rotation.y = -miniMoonAngle;
+
+      moonPhase3dRenderer.render(moon3dScene, moon3dCamera);
+
+      // --- Main scene render ---
+      renderer.render(scene, camera);
+    }
+
+
+    // ... [keep all your other utility, controls, UI, etc. code here] ...
+
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -916,9 +969,10 @@
     }, false);
 
     animate();
-
     updatePositionDisplays();
   </script>
+
+
 </body>
 
 </html>
