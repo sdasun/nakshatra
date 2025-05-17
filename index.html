@@ -195,8 +195,8 @@
     // --- Shared Constants ---
     const NAKSHATRA_COUNT = 27;
     const ZODIAC_COUNT = 12;
-    const NAKSHATRA_ARC_RADIANS = (2 * PI) / NAKSHATRA_COUNT;
-    const ZODIAC_ARC_RADIANS = (2 * PI) / ZODIAC_COUNT;
+    const NAKSHATRA_ARC_RADIANS = -(2 * PI) / NAKSHATRA_COUNT;
+    const ZODIAC_ARC_RADIANS = -(2 * PI) / ZODIAC_COUNT;
     const earthRadius = 2;
     const moonOrbitRadius = earthRadius * 3.5;
     const zodiacInnerRadius = 21;
@@ -627,17 +627,8 @@
       // Get current angles
       let sunAngle, moonAngle;
 
-      if (manualSunPosition !== null) {
-        sunAngle = degreesToRadians(manualSunPosition);
-      } else {
-        sunAngle = (simulationTime / sunPeriodDays) * 2 * PI;
-      }
-
-      if (manualMoonPosition !== null) {
-        moonAngle = degreesToRadians(manualMoonPosition);
-      } else {
-        moonAngle = (simulationTime / moonPeriodDays) * 2 * PI;
-      }
+      sunAngle = getSunAngle();
+      moonAngle = getMoonAngle();
 
       // Convert to degrees and format
       const sunDegrees = radiansToDegrees(sunAngle);
@@ -659,24 +650,15 @@
 
     // Handle slider changes
     sunPositionSlider.addEventListener('input', function () {
-      if (debug) console.log("Sun slider adjusted to:", this.value);
+      // if (debug) console.log("Sun slider adjusted to:", this.value);
 
       // Store the current positions
       manualSunPosition = parseFloat(this.value);
       lastAdjustedObject = 'sun'; // Track that sun was last adjusted
 
-      // Calculate current moon angle in degrees if not already set
-      if (manualMoonPosition === null) {
-        const moonX = moon.position.x;
-        const moonZ = moon.position.z;
-        const moonAngle = Math.atan2(moonZ, moonX);
-        manualMoonPosition = radiansToDegrees(moonAngle);
-        if (debug) console.log("Captured current moon position:", manualMoonPosition);
-      }
-
       // Update positions immediately
       const sunAngle = degreesToRadians(manualSunPosition);
-      sun.position.set(sunOrbitRadius * cos(sunAngle), 0, sunOrbitRadius * sin(sunAngle));
+      sun.position.set(sunOrbitRadius * cos(2 * PI - sunAngle), 0, sunOrbitRadius * sin(2 * PI - sunAngle));
       sunLight.position.copy(sun.position);
 
       // Update displays 
@@ -684,7 +666,7 @@
 
       // Pause animation if it's running
       if (animateFlag) {
-        if (debug) console.log("Pausing animation due to sun slider adjustment");
+        // if (debug) console.log("Pausing animation due to sun slider adjustment");
         animateFlag = false;
         updatePlayPauseButton();
       }
@@ -696,24 +678,15 @@
     });
 
     moonPositionSlider.addEventListener('input', function () {
-      if (debug) console.log("Moon slider adjusted to:", this.value);
+      // if (debug) console.log("Moon slider adjusted to:", this.value);
 
       // Store the current positions
       manualMoonPosition = parseFloat(this.value);
       lastAdjustedObject = 'moon'; // Track that moon was last adjusted
 
-      // Calculate current sun angle in degrees if not already set
-      if (manualSunPosition === null) {
-        const sunX = sun.position.x;
-        const sunZ = sun.position.z;
-        const sunAngle = Math.atan2(sunZ, sunX);
-        manualSunPosition = radiansToDegrees(sunAngle);
-        if (debug) console.log("Captured current sun position:", manualSunPosition);
-      }
-
       // Update positions immediately
       const moonAngle = degreesToRadians(manualMoonPosition);
-      moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
+      moon.position.set(moonOrbitRadius * cos(2 * PI - moonAngle), 0, moonOrbitRadius * sin(2 * PI - moonAngle));
 
       // Update displays
       updatePositionDisplays();
@@ -743,29 +716,6 @@
       } else {
         // Button says "Play", so we're currently paused and want to resume
         console.log("Resuming animation");
-
-        // Check if we have manual positions set
-        if (manualSunPosition !== null || manualMoonPosition !== null) {
-          console.log("Manual positions detected:",
-            "Sun:", manualSunPosition,
-            "Moon:", manualMoonPosition);
-
-          // Calculate what simulationTime would give this position
-          if (lastAdjustedObject === 'sun' && manualSunPosition !== null) {
-            const sunAngle = degreesToRadians(manualSunPosition);
-            simulationTime = (sunAngle * sunPeriodDays) / (2 * PI);
-            console.log("Setting simulation time based on sun position:", simulationTime);
-          } else if (lastAdjustedObject === 'moon' && manualMoonPosition !== null) {
-            const moonAngle = degreesToRadians(manualMoonPosition);
-            simulationTime = (moonAngle * moonPeriodDays) / (2 * PI);
-            console.log("Setting simulation time based on moon position:", simulationTime);
-          }
-
-          // Clear manual positions so animation can continue from current position
-          console.log("Clearing manual positions");
-          manualSunPosition = null;
-          manualMoonPosition = null;
-        }
 
         animateFlag = true;
         playPauseBtn.textContent = "Pause";
@@ -893,8 +843,8 @@
         const simulationDaysElapsed = delta * currentSpeedValue * speedDirection;
         simulationTime += simulationDaysElapsed;
 
-        const moonAngle = getMoonAngle();
-        const sunAngle = getSunAngle();
+        const moonAngle = 2 * PI - getMoonAngle();
+        const sunAngle = 2 * PI - getSunAngle();
 
         moon.position.set(moonOrbitRadius * cos(moonAngle), 0, moonOrbitRadius * sin(moonAngle));
         sun.position.set(sunOrbitRadius * cos(sunAngle), 0, sunOrbitRadius * sin(sunAngle));
@@ -908,8 +858,8 @@
 
       // --- 3D Moon Mini Phase View Update ---
       // Camera is positioned as if you are at the earth, looking at the moon
-      const miniMoonAngle = getMoonAngle();
-      const miniSunAngle = getSunAngle();
+      const miniMoonAngle = 2 * PI - getMoonAngle();
+      const miniSunAngle = 2 * PI - getSunAngle();
 
       // Camera looks from earth to moon
       const camDistance = 6;
