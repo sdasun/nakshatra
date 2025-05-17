@@ -6,12 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>27 Nakshatra & Zodiac 3D - V7 (Features)</title>
   <style>
+    /* ... all your CSS unchanged ... */
     body {
       margin: 0;
       background: #0a0a1a;
       overflow: hidden;
       color: white;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-image: url('/images/sky.png');
+      background-blend-mode: overlay;
+      background-color: rgba(0, 0, 0, 0.75);
     }
 
     canvas {
@@ -25,7 +29,6 @@
       transform: translateX(-50%);
       display: flex;
       gap: 15px;
-      /* Slightly reduced gap */
       padding: 12px 20px;
       background: rgba(30, 30, 50, 0.85);
       border-radius: 12px;
@@ -40,22 +43,18 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      /* Slightly reduced gap */
     }
 
     button {
       padding: 8px 12px;
-      /* Adjusted padding */
       background: #4a4a7a;
       border: none;
       color: white;
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      /* Slightly smaller font */
       transition: background-color 0.2s ease, transform 0.1s ease;
       min-width: 50px;
-      /* Minimum width for consistency */
       text-align: center;
     }
 
@@ -77,22 +76,17 @@
     #speedDisplay {
       color: #e0e0ff;
       font-size: 13px;
-      /* Slightly smaller font */
       min-width: 120px;
-      /* Adjusted width */
       text-align: center;
       padding: 5px;
       background-color: rgba(0, 0, 0, 0.2);
       border-radius: 4px;
     }
 
-    /* --- MOON PHASE STYLES --- */
     #moon-phase-container {
       position: absolute;
       top: 15px;
-      /* Adjust as needed */
       right: 15px;
-      /* Adjust as needed */
       padding: 8px;
       background: rgba(30, 30, 50, 0.85);
       border-radius: 8px;
@@ -100,7 +94,6 @@
       z-index: 100;
       display: flex;
       flex-direction: column;
-      /* Stack image and text vertically */
       align-items: center;
       gap: 5px;
       backdrop-filter: blur(5px);
@@ -112,23 +105,15 @@
 
     #moon-phase-image {
       width: 150px;
-      /* Adjust size as needed */
       height: 150px;
-      /* Adjust size as needed */
       border-radius: 50%;
-      /* Circular image */
       object-fit: cover;
-      /* Ensure image covers the area nicely */
       background-color: #111;
-      /* Dark background in case images have transparency */
       border: 5px solid rgba(30, 30, 50, 1);
-      /* box-shadow: inset 0px 0px 0px 20px rgba(30, 30, 50, 1);
-      box-shadow: outset 0px 0px 0px 20px rgba(30, 30, 50, 1); */
     }
 
     #moon-phase-name {
       font-size: 21px;
-      /* Smaller font for the name */
       text-align: center;
       max-width: 150px;
     }
@@ -177,6 +162,15 @@
       </div>
     </div>
   </div>
+  <a class="logo" href="https://tharukirana.com" target="_blank"
+    style="position: absolute; top: 10px; left: 10px; z-index: 100; display: flex; align-items: center; text-decoration: none; gap: 10px;">
+    <img src="/images/tharukirana_logo_small2.png" alt="Tharu Kirana Logo" title="Tharu Kirana Logo"
+      style="width: 150px; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);">
+    <div style="color: #ffffff; font-size: 16px; line-height: 1.4;">
+      <strong style="font-size: 18px;">පොහොය නාම කරණ Simulation</strong><br>
+      <span style="font-size: 14px;">Developed by Tharu Kirana</span>
+    </div>
+  </a>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
   <script>
@@ -211,13 +205,13 @@
     const sunOrbitRadius = 23;
 
     // --- Materials ---
-    const nakshatraArcMaterial = new THREE.MeshBasicMaterial({ color: 0x555599, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
-    const nakshatraArcMaterialAlt = new THREE.MeshBasicMaterial({ color: 0x6666AA, side: THREE.DoubleSide, transparent: true, opacity: 0.30 });
-    const nakshatraDividerMaterial = new THREE.LineBasicMaterial({ color: 0xAAAAFF, transparent: true, opacity: 0.5 });
+    const nakshatraArcMaterial = new THREE.MeshBasicMaterial({ color: 0x555599, side: THREE.DoubleSide, transparent: true, opacity: 0.1 });
+    const nakshatraArcMaterialAlt = new THREE.MeshBasicMaterial({ color: 0x6666AA, side: THREE.DoubleSide, transparent: true, opacity: 0.1 });
+    const nakshatraDividerMaterial = new THREE.LineBasicMaterial({ color: 0xAAAAFF, linewidth: 2 });
 
-    const zodiacArcMaterial = new THREE.MeshBasicMaterial({ color: 0x998855, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
-    const zodiacArcMaterialAlt = new THREE.MeshBasicMaterial({ color: 0xAA9966, side: THREE.DoubleSide, transparent: true, opacity: 0.30 });
-    const zodiacDividerMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFCC, transparent: true, opacity: 0.5 });
+    const zodiacArcMaterial = new THREE.MeshBasicMaterial({ color: 0x998855, side: THREE.DoubleSide, transparent: true, opacity: 0.1 });
+    const zodiacArcMaterialAlt = new THREE.MeshBasicMaterial({ color: 0xAA9966, side: THREE.DoubleSide, transparent: true, opacity: 0.1 });
+    const zodiacDividerMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFCC, linewidth: 2 });
 
 
     // --- Nakshatras ---
@@ -244,6 +238,7 @@
       // Arc geometry
       const arcGeometry = new THREE.RingGeometry(nakshatraInnerRadius, nakshatraOuterRadius, 3, 1, thetaStart, thetaLength);
       const arcMesh = new THREE.Mesh(arcGeometry, i % 2 === 0 ? nakshatraArcMaterial : nakshatraArcMaterialAlt);
+      arcMesh.rotation.x = -Math.PI / 2;
       nakshatraGroup.add(arcMesh);
 
       // Text sprite (Keeping Nakshatras as sprites for now, simpler)
@@ -257,10 +252,10 @@
       // Text plane for lunar month names
       const monthText = lunarMonthNames[i];
       if (monthText.trim() !== '') { // Skip if the text is empty
-        const monthSprite = createTextPlane(monthText, 18, '#ffff00'); // New function for text on planes
+        const monthSprite = createTextSprite(monthText, 24, '#ffff00'); // New function for text on planes
         // place it under the nakshatra text centered
         monthSprite.position.set(x, 0, z + 1); // Adjust Y position to be below the nakshatra
-        monthSprite.rotation.x = -PI / 2; // Rotate to face the camera
+        // monthSprite.rotation.x = -PI / 2; // Rotate to face the camera
         nakshatraGroup.add(monthSprite);
       }
 
@@ -306,6 +301,7 @@
       // Arc geometry
       const arcGeometry = new THREE.RingGeometry(zodiacInnerRadius, zodiacOuterRadius, 4, 1, thetaStart, thetaLength);
       const arcMesh = new THREE.Mesh(arcGeometry, i % 2 === 0 ? zodiacArcMaterial : zodiacArcMaterialAlt);
+      arcMesh.rotation.x = -Math.PI / 2;
       zodiacGroup.add(arcMesh);
 
       // Text sprite
@@ -355,14 +351,76 @@
     sunLight.target = earth;
 
 
-    // --- Camera ---
+    // --- Camera (initial placement, but now we use spherical coordinates for rotation) ---
     const initialCameraY = 60;
     const minCameraY = 15; // Minimum zoom distance
     const maxCameraY = 150; // Maximum zoom distance
-    camera.position.set(0, initialCameraY, 0);
-    camera.up.set(0, 0, -1); // Point Z towards the user initially
-    camera.lookAt(0, 0, 0);
 
+    // Initial camera spherical coordinates
+    let camRadius = initialCameraY;
+    let camAzimuth = 0;      // theta, horizontal, in radians (around Y axis)
+    let camPolar = PI / 2.1; // phi, vertical, in radians (PI/2 is top, 0 is horizon). Set so top view is default.
+
+    function updateCameraPosition() {
+      // Spherical to Cartesian conversion
+      const x = camRadius * Math.sin(camPolar) * Math.sin(camAzimuth);
+      const y = camRadius * Math.cos(camPolar);
+      const z = camRadius * Math.sin(camPolar) * Math.cos(camAzimuth);
+      camera.position.set(x, y, z);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(0, 0, 0);
+    }
+    updateCameraPosition();
+
+    // --- View Rotation Controls ---
+    let isDragging = false;
+    let previousMouseX = 0;
+    let previousMouseY = 0;
+
+    // Sensitivity factors for smooth control
+    const ROTATE_SENSITIVITY = 0.008;
+    const POLAR_SENSITIVITY = 0.008;
+    const MIN_POLAR = 0.2;         // Not quite horizontal
+    const MAX_POLAR = PI - 0.2;    // Not quite horizontal
+
+    renderer.domElement.addEventListener('mousedown', function (event) {
+      if (event.button !== 0) return; // Only left button
+      isDragging = true;
+      previousMouseX = event.clientX;
+      previousMouseY = event.clientY;
+    });
+
+    renderer.domElement.addEventListener('mousemove', function (event) {
+      if (!isDragging) return;
+      const deltaX = event.clientX - previousMouseX;
+      const deltaY = event.clientY - previousMouseY;
+      previousMouseX = event.clientX;
+      previousMouseY = event.clientY;
+
+      camAzimuth -= deltaX * ROTATE_SENSITIVITY;
+      camPolar -= deltaY * POLAR_SENSITIVITY;
+
+      // Clamp polar angle to avoid flipping the camera
+      camPolar = Math.max(MIN_POLAR, Math.min(MAX_POLAR, camPolar));
+
+      updateCameraPosition();
+    });
+
+    renderer.domElement.addEventListener('mouseup', function () { isDragging = false; });
+    renderer.domElement.addEventListener('mouseleave', function () { isDragging = false; });
+
+    // --- Mouse Wheel Zoom (slightly changed: now updates camRadius) ---
+    function handleMouseWheel(event) {
+      event.preventDefault(); // Prevent default page scrolling
+
+      const zoomIntensity = 0.05;
+      const delta = event.deltaY;
+      let zoomFactor = (delta < 0) ? (1 - zoomIntensity) : (1 + zoomIntensity);
+
+      camRadius = max(minCameraY, min(maxCameraY, camRadius * zoomFactor));
+      updateCameraPosition();
+    }
+    renderer.domElement.addEventListener('wheel', handleMouseWheel, { passive: false });
 
     // --- Simulation Variables & Constants ---
     let clock = new THREE.Clock();
@@ -849,63 +907,12 @@
       return sprite;
     }
 
-    // *** NEW Function for Text on Planes (used for Zodiac) ***
-    function createTextPlane(message, fontSize = 30, color = '#ffffff') {
-      const effectiveScale = window.devicePixelRatio || 1;
-      const padding = 10 * (fontSize / 30);
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.font = `bold ${fontSize}px sans-serif`;
-      const textMetrics = ctx.measureText(message);
-      const textWidth = textMetrics.width;
-      // Base canvas dimensions on unscaled metrics
-      const canvasWidth = textWidth + padding * 2;
-      const canvasHeight = fontSize + padding * 2;
-
-      canvas.width = canvasWidth * effectiveScale;
-      canvas.height = canvasHeight * effectiveScale;
-
-      ctx.scale(effectiveScale, effectiveScale);
-      ctx.font = `bold ${fontSize}px sans-serif`;
-      ctx.fillStyle = color;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-      ctx.shadowBlur = 3 * effectiveScale;
-      ctx.shadowOffsetX = 1 * effectiveScale;
-      ctx.shadowOffsetY = 1 * effectiveScale;
-      // Draw text centered in the unscaled dimensions
-      ctx.fillText(message, canvasWidth / 2, canvasHeight / 2);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.minFilter = THREE.LinearFilter;
-      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-      // Use MeshBasicMaterial for Planes
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        alphaTest: 0.1, // Helps with transparent edges
-        depthTest: false, // Render text on top easily (optional)
-        side: THREE.DoubleSide // Show text from both sides
-      });
-
-      // Calculate plane size based on unscaled canvas dimensions
-      const planeScaleFactor = 0.05; // Adjust this factor to control text size in 3D space
-      const planeWidth = canvasWidth * planeScaleFactor;
-      const planeHeight = canvasHeight * planeScaleFactor;
-
-      const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-      const mesh = new THREE.Mesh(geometry, material);
-      return mesh;
-    }
-
-
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(window.devicePixelRatio);
+      updateCameraPosition();
     }, false);
 
     animate();
