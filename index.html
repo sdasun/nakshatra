@@ -487,16 +487,7 @@
     let currentSpeedIndex = 2; const defaultSpeedIndex = 2;
 
     // --- Moon Phase Display Elements & Config ---
-    const moonPhaseImageElement = document.getElementById('moon-phase-image');
     const moonPhaseNameElement = document.getElementById('moon-phase-name');
-
-    const moonPhaseImageBasePath = "/images/moon_phases/"; // <<< USER: ADJUST THIS PATH & PROVIDE IMAGES
-    const moonPhaseImageFiles = [];
-    for (let i = 0; i < 30; i++) {
-      // zero pad the number to 2 digits
-      const paddedIndex = String(i).padStart(2, '0');
-      moonPhaseImageFiles.push(`phase_${paddedIndex}.png`);
-    }
     const moonPhaseNames = [
       "පුර පෑලවිය",
       "පුර දියවක",
@@ -529,16 +520,6 @@
       "අව තුදුස්වක",
       "අමාවක"
     ];
-    // Preload moon phase images (optional, but good practice)
-    // Preload moon phase images (optional, but good practice)
-    const moonPhasePreloadedImages = [];
-    if (typeof Image !== 'undefined') {
-      moonPhaseImageFiles.forEach(file => {
-        const img = new Image();
-        img.src = moonPhaseImageBasePath + file;
-        moonPhasePreloadedImages.push(img);
-      });
-    }
 
     // This function is no longer used, but kept for reference
     function updatePlayPauseButton() {
@@ -622,7 +603,7 @@
 
     // --- MOON PHASE CALCULATION AND DISPLAY FUNCTION ---
     function updateMoonPhaseDisplay(currentSunAngle, currentMoonAngle) {
-      if (!moonPhaseImageElement || !moonPhaseNameElement) return; // Safety check
+      if (!moonPhaseNameElement) return; // Safety check
 
       let elongation = (currentMoonAngle - currentSunAngle);
       // Normalize elongation to 0-2PI
@@ -638,9 +619,6 @@
       // Math.floor(360 / 12) = 30. If elongation is exactly 360 (or 2*PI), it should be phase 0.
       phaseIndex = phaseIndex % 30;
 
-      moonPhaseImageElement.src = moonPhaseImageBasePath + moonPhaseImageFiles[phaseIndex];
-      moonPhaseImageElement.alt = moonPhaseNames[phaseIndex];
-      moonPhaseImageElement.title = `${moonPhaseNames[phaseIndex]} (Elong: ${elongationDegrees.toFixed(1)}°)`;
       moonPhaseNameElement.textContent = moonPhaseNames[phaseIndex];
     }
 
