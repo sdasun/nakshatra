@@ -205,8 +205,8 @@
     const ZODIAC_ARC_RADIANS = -(2 * PI) / ZODIAC_COUNT;
     const earthRadius = 2;
     const moonOrbitRadius = earthRadius * 3.5;
-    const moonOrbitDeclination = degreesToRadians(-5);
-    const sunOrbitDeclination = degreesToRadians(23.45);
+    const moonOrbitDeclination = -degreesToRadians(5);
+    const OBLIQUITY = degreesToRadians(23.439281); // J2000 obliquity (sun orbit tilt)
     const zodiacInnerRadius = 21;
     const zodiacOuterRadius = 23;
     const nakshatraInnerRadius = 23
@@ -214,7 +214,7 @@
     const nakshatraOuterRadius = 25
     const sunOrbitRadius = 23;
     // Moon's nodes precession period: ~18.6 years (in days)
-    const lunarNodesPeriodDays = 6798; // 18.6 * 365.25
+    const lunarNodesPeriodDays = -6798; // 18.6 * 365.25
 
     // --- Materials ---
     const nakshatraArcMaterial = new THREE.MeshBasicMaterial({ color: 0x555599, side: THREE.DoubleSide, transparent: true, opacity: 0.1 });
@@ -339,29 +339,90 @@
 
 
     // --- Earth, Sun, Moon (Texturing) ---
+    // --- Earth Group: for true tilt and easy axis arrow ---
+    const earthPrecessionGroup = new THREE.Group();
+    scene.add(earthPrecessionGroup);
+    const earthGroup = new THREE.Group();
+    earthPrecessionGroup.add(earthGroup);
+
+    // Earth mesh
     const earthTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
     const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture, roughness: 0.7, metalness: 0.1 });
     const earth = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthMaterial);
-    // 23.45 degrees tilt
-    earth.rotation.x = degreesToRadians(sunOrbitDeclination);
-    scene.add(earth);
+    earthGroup.add(earth);
 
-    // earth equator ring 
+    // Tilt earthGroup by obliquity
+    const ayanamsaDeg = 23; // Adjust for your date
+    // Ecliptic longitude in sidereal: 90° (tropical) - ayanamsa
+    const tiltLongitudeSiderealDeg = 90 - ayanamsaDeg;
+    const tiltLongitudeSiderealRad = (PI / 2) + degreesToRadians(tiltLongitudeSiderealDeg);
+    earthPrecessionGroup.rotation.y = tiltLongitudeSiderealRad;
+    earthGroup.rotation.x = OBLIQUITY;
+
+    // --- Earth equator ring (added to group so it tilts with earth) ---
     const earthEquatorGeometry = new THREE.RingGeometry(earthRadius, earthRadius * 1.1, 64);
     const earthEquatorMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
     const earthEquator = new THREE.Mesh(earthEquatorGeometry, earthEquatorMaterial);
     earthEquator.rotation.x = -PI / 2;
     earthEquator.position.set(0, 0, 0);
-    scene.add(earthEquator);
+    earthGroup.add(earthEquator);
 
-    // add earth polar axis
+    // --- Earth axis (arrow helper, shows north pole direction) ---
+    const axisLength = earthRadius * 2.5;
+    const axisHelper = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 1, 0),     // local +Y is north pole
+      new THREE.Vector3(0, 0, 0),     // from earth's center
+      axisLength,
+      0x22ff22,
+      earthRadius * 0.25,
+      earthRadius * 0.12
+    );
+    earthGroup.add(axisHelper);
+
+    // --- Optional: South pole axis in red ---
+    const southAxisHelper = new THREE.ArrowHelper(
+      new THREE.Vector3(0, -1, 0),
+      new THREE.Vector3(0, 0, 0),
+      axisLength * 0.8,
+      0xff2222,
+      earthRadius * 0.22,
+      earthRadius * 0.10
+    );
+    earthGroup.add(southAxisHelper);
+
+    // --- Optional: add "N" label at north tip ---
+    function createAxisLabel(text, color = "#fff", fontSize = 64) {
+      const canvas = document.createElement("canvas");
+      const size = 128;
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#222";
+      ctx.arc(size / 2, size / 2, size / 2 - 5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = color;
+      ctx.fillText(text, size / 2, size / 2 + 5);
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(earthRadius * 0.6, earthRadius * 0.6, 1);
+      return sprite;
+    }
+
+    const northLabel = createAxisLabel("N", "#99ff99");
+    northLabel.position.set(0, axisLength + earthRadius * 0.18, 0);
+    earthGroup.add(northLabel);
+
+    // --- Earth axis cylinder (optional, visual axis line) ---
     const earthAxisGeometry = new THREE.CylinderGeometry(0.075, 0.075, earthRadius * 2.3, 32);
     const earthAxisMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     const earthAxis = new THREE.Mesh(earthAxisGeometry, earthAxisMaterial);
-    earthAxis.rotation.x = degreesToRadians(23.45);
-    earthAxis.rotation.y = -PI / 2;
     earthAxis.position.set(0, 0, 0);
-    scene.add(earthAxis);
+    earthAxis.rotation.z = 0;
+    earthGroup.add(earthAxis);
+
 
     const sunTexture = textureLoader.load('/images/sun.png');
     const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture, toneMapped: false });
@@ -563,8 +624,8 @@
 
     // --- Lunar Nodes (Ascending/North and Descending/South) ---
     let nodeLongitude = 0;
-    const nodeMarkerMaterialN = new THREE.MeshBasicMaterial({ color: 0xff2200 });
-    const nodeMarkerMaterialS = new THREE.MeshBasicMaterial({ color: 0x0099ff });
+    const nodeMarkerMaterialN = new THREE.MeshBasicMaterial({ color: 0x0099ff });
+    const nodeMarkerMaterialS = new THREE.MeshBasicMaterial({ color: 0xff2200 });
     const nodeMarkerGeometry = new THREE.SphereGeometry(earthRadius * 0.14, 24, 24);
 
     const nodeNorth = new THREE.Mesh(nodeMarkerGeometry, nodeMarkerMaterialN);
@@ -600,8 +661,8 @@
       return sprite;
     }
 
-    const labelNorth = createLabelSprite("☊", "#ffcc00");
-    const labelSouth = createLabelSprite("☋", "#99e0ff");
+    const labelNorth = createLabelSprite("☊", "#99e0ff");
+    const labelSouth = createLabelSprite("☋", "#ffcc00");
 
     moonOrbitInclinationGroup.add(labelNorth);
     moonOrbitInclinationGroup.add(labelSouth);
@@ -941,7 +1002,6 @@
     // ==============================
     // ========== ANIMATION =========
     // ==============================
-
     function animate() {
       requestAnimationFrame(animate);
       const delta = clock.getDelta();
