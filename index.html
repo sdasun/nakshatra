@@ -88,7 +88,7 @@
       top: 15px;
       right: 15px;
       padding: 8px;
-      background: rgba(30, 30, 50, 0.85);
+      /* background: rgba(30, 30, 50, 0.85); */
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
       z-index: 100;
@@ -101,6 +101,10 @@
       color: white;
       min-width: 200px;
       min-height: 250px;
+    }
+
+    #moon-phase-container canvas {
+      background-color: rgba(255, 255, 255, 0);
     }
 
     #moon-phase-image {
@@ -123,8 +127,7 @@
 <body>
   <!-- MOON PHASE DISPLAY ELEMENT -->
   <div id="moon-phase-container">
-    <canvas id="moon-phase-3d" width="170" height="170"
-      style="border-radius: 50%; background: #111; display: block; margin: 0 auto; box-shadow: 0 1px 10px #0006;"></canvas>
+    <canvas id="moon-phase-3d" width="170" height="170"></canvas>
 
 
     <span id="moon-phase-name">Loading...</span>
@@ -137,32 +140,32 @@
       <button id="reverseBtn" title="Toggle Direction">Forward</button>
     </div>
     <div class="control-group">
+      <button id="labelToggleBtn" style="min-width:80px;">Hide Labels</button>
+    </div>
+    <div class="control-group">
       <button id="speedDownBtn" title="Slower">-</button>
       <span id="speedDisplay">Speed: 1s = 1 Day</span>
       <button id="speedUpBtn" title="Faster">+</button>
       <button id="resetSpeedBtn" title="Reset Speed">Reset</button>
     </div>
     <div class="control-group" style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px;">
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="min-width: 40px; color: #ffcc66;">Sun:</span>
-          <span id="sunPositionDisplay"
-            style="min-width: 80px; background-color: rgba(0, 0, 0, 0.2); padding: 3px 6px; border-radius: 4px; font-size: 13px;">0°
-            0' 0"</span>
-          <input type="range" id="sunPositionSlider" min="0" max="360" value="0" style="width: 120px;"
-            title="Adjust Sun Position" aria-label="Adjust Sun Position">
-          <span id="sunPositionText" style="font-size: 18px; color: #ffcc66; min-width: 150px;"></span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="min-width: 40px; color: #aaccff;">Moon:</span>
-          <span id="moonPositionDisplay"
-            style="min-width: 80px; background-color: rgba(0, 0, 0, 0.2); padding: 3px 6px; border-radius: 4px; font-size: 13px;">0°
-            0' 0"</span>
-          <input type="range" id="moonPositionSlider" min="0" max="360" value="0" style="width: 120px;"
-            title="Adjust Moon Position" aria-label="Adjust Moon Position">
-          <span id="moonPositionText" style="font-size: 18px; color: #aaccff; min-width: 150px;"></span>
-        </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="min-width: 40px; color: #ffcc66;">Sun:</span>
+        <span id="sunPositionDisplay"
+          style="min-width: 80px; background-color: rgba(0, 0, 0, 0.2); padding: 3px 6px; border-radius: 4px; font-size: 13px;">0°
+          0' 0"</span>
+        <input type="text" id="sunKnob" value="0" style="width:54px;height:54px;display:inline-block;">
+        <span id="sunPositionText" style="font-size: 18px; color: #ffcc66; min-width: 150px;"></span>
       </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="min-width: 40px; color: #aaccff;">Moon:</span>
+        <span id="moonPositionDisplay"
+          style="min-width: 80px; background-color: rgba(0, 0, 0, 0.2); padding: 3px 6px; border-radius: 4px; font-size: 13px;">0°
+          0' 0"</span>
+        <input type="text" id="moonKnob" value="0" style="width:54px;height:54px;display:inline-block;">
+        <span id="moonPositionText" style="font-size: 18px; color: #aaccff; min-width: 150px;"></span>
+      </div>
+
     </div>
   </div>
   <a class="logo" href="https://tharukirana.com" target="_blank"
@@ -175,6 +178,9 @@
     </div>
   </a>
 
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jQuery-Knob/1.2.13/jquery.knob.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
   <script>
     const { PI, cos, sin, min, max } = Math;
@@ -360,10 +366,14 @@
     const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), sunMaterial);
     scene.add(sun);
 
+    const moonOrbitGroup = new THREE.Group();
+    moonOrbitGroup.rotation.x = moonOrbitDeclination; // same as orbit line
+    scene.add(moonOrbitGroup);
+
     const moonTexture = textureLoader.load('https://threejs.org/examples/textures/planets/moon_1024.jpg');
     const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture, roughness: 0.9, metalness: 0.05 });
     const moon = new THREE.Mesh(new THREE.SphereGeometry(earthRadius * 0.27, 32, 32), moonMaterial);
-    scene.add(moon);
+    moonOrbitGroup.add(moon);
 
     // --- Lighting ---
     scene.add(new THREE.AmbientLight(0x606080, 0.5));
@@ -373,17 +383,16 @@
 
 
     // --- Camera (initial placement, but now we use spherical coordinates for rotation) ---
-    const initialCameraY = 60;
-    const minCameraY = 15; // Minimum zoom distance
-    const maxCameraY = 150; // Maximum zoom distance
-
-    // Initial camera spherical coordinates
-    let camRadius = initialCameraY;
-    let camAzimuth = 0;      // theta, horizontal, in radians (around Y axis)
-    let camPolar = PI / 2.1; // phi, vertical, in radians (PI/2 is top, 0 is horizon). Set so top view is default.
+    // --- Camera Spherical Coordinates ---
+    let camRadius = 60;
+    let camAzimuth = 0;         // θ (longitude, around Y), can be any value for infinite rotation
+    let camPolar = Math.PI / 2.1; // φ (latitude, vertical)
+    const minCameraY = 15;
+    const maxCameraY = 150;
+    const MIN_POLAR = 0.2;
+    const MAX_POLAR = Math.PI - 0.2;
 
     function updateCameraPosition() {
-      // Spherical to Cartesian conversion
       const x = camRadius * Math.sin(camPolar) * Math.sin(camAzimuth);
       const y = camRadius * Math.cos(camPolar);
       const z = camRadius * Math.sin(camPolar) * Math.cos(camAzimuth);
@@ -393,55 +402,113 @@
     }
     updateCameraPosition();
 
-    // --- View Rotation Controls ---
+    // --- Improved View Rotation Controls ---
     let isDragging = false;
-    let previousMouseX = 0;
-    let previousMouseY = 0;
-
-    // Sensitivity factors for smooth control
+    let lastX = 0, lastY = 0;
     const ROTATE_SENSITIVITY = 0.008;
     const POLAR_SENSITIVITY = 0.008;
-    const MIN_POLAR = 0.2;         // Not quite horizontal
-    const MAX_POLAR = PI - 0.2;    // Not quite horizontal
 
-    renderer.domElement.addEventListener('mousedown', function (event) {
-      if (event.button !== 0) return; // Only left button
+    function wrapAzimuth(az) {
+      // Allow azimuth to grow/shrink without limit for seamless rotation
+      return az;
+    }
+
+    renderer.domElement.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
       isDragging = true;
-      previousMouseX = event.clientX;
-      previousMouseY = event.clientY;
+      lastX = e.clientX;
+      lastY = e.clientY;
     });
 
-    renderer.domElement.addEventListener('mousemove', function (event) {
+    renderer.domElement.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
-      const deltaX = event.clientX - previousMouseX;
-      const deltaY = event.clientY - previousMouseY;
-      previousMouseX = event.clientX;
-      previousMouseY = event.clientY;
-
-      camAzimuth -= deltaX * ROTATE_SENSITIVITY;
-      camPolar -= deltaY * POLAR_SENSITIVITY;
-
-      // Clamp polar angle to avoid flipping the camera
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      camAzimuth = wrapAzimuth(camAzimuth - dx * ROTATE_SENSITIVITY);
+      camPolar -= dy * POLAR_SENSITIVITY;
       camPolar = Math.max(MIN_POLAR, Math.min(MAX_POLAR, camPolar));
-
       updateCameraPosition();
     });
 
-    renderer.domElement.addEventListener('mouseup', function () { isDragging = false; });
-    renderer.domElement.addEventListener('mouseleave', function () { isDragging = false; });
+    renderer.domElement.addEventListener('mouseup', () => { isDragging = false; });
+    renderer.domElement.addEventListener('mouseleave', () => { isDragging = false; });
 
-    // --- Mouse Wheel Zoom (slightly changed: now updates camRadius) ---
-    function handleMouseWheel(event) {
-      event.preventDefault(); // Prevent default page scrolling
-
-      const zoomIntensity = 0.05;
-      const delta = event.deltaY;
-      let zoomFactor = (delta < 0) ? (1 - zoomIntensity) : (1 + zoomIntensity);
-
-      camRadius = max(minCameraY, min(maxCameraY, camRadius * zoomFactor));
+    // --- Zoom: mouse wheel & pinch support ---
+    function handleZoom(deltaY, factor = 0.05) {
+      camRadius = Math.max(minCameraY, Math.min(maxCameraY, camRadius * (1 + factor * Math.sign(deltaY))));
       updateCameraPosition();
     }
-    renderer.domElement.addEventListener('wheel', handleMouseWheel, { passive: false });
+    renderer.domElement.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      handleZoom(e.deltaY);
+    }, { passive: false });
+    renderer.domElement.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        isDragging = false; // disable drag on pinch
+        pinchStartDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        pinchStartRadius = camRadius;
+      }
+    });
+    let pinchStartDist = 0, pinchStartRadius = 0;
+    renderer.domElement.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && pinchStartDist) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const zoomDelta = pinchStartDist - dist;
+        camRadius = Math.max(minCameraY, Math.min(maxCameraY, pinchStartRadius + zoomDelta * 0.12));
+        updateCameraPosition();
+      }
+    }, { passive: false });
+    renderer.domElement.addEventListener('touchend', (e) => {
+      pinchStartDist = 0;
+    });
+
+    // --- Camera Preset Buttons ---
+    const viewPresets = [
+      { label: "Top", polar: 0.21 * Math.PI, azimuth: 0 },
+      { label: "Side", polar: Math.PI / 2, azimuth: 0 },
+      { label: "Bottom", polar: Math.PI - 0.21 * Math.PI, azimuth: 0 },
+      { label: "Oblique", polar: Math.PI / 3, azimuth: Math.PI / 4 }
+    ];
+
+    // Insert preset buttons into the controls panel
+    const controls = document.getElementById("controls-container");
+    const presetDiv = document.createElement("div");
+    presetDiv.className = "control-group";
+    presetDiv.style.borderLeft = "1px solid rgba(255,255,255,0.2)";
+    presetDiv.style.paddingLeft = "10px";
+    presetDiv.style.gap = "7px";
+    viewPresets.forEach(preset => {
+      const btn = document.createElement("button");
+      btn.textContent = preset.label;
+      btn.onclick = () => {
+        camPolar = preset.polar;
+        camAzimuth = preset.azimuth;
+        updateCameraPosition();
+      };
+      presetDiv.appendChild(btn);
+    });
+    controls.appendChild(presetDiv);
+
+    // --- Keyboard shortcuts for camera view presets ---
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && e.code.startsWith("Digit")) {
+        let idx = +e.code.slice(-1) - 1;
+        if (idx >= 0 && idx < viewPresets.length) {
+          camPolar = viewPresets[idx].polar;
+          camAzimuth = viewPresets[idx].azimuth;
+          updateCameraPosition();
+        }
+      }
+    });
 
     // --- Simulation Variables & Constants ---
     let clock = new THREE.Clock();
@@ -470,27 +537,26 @@
     console.log("Initial animation state:", animateFlag ? "RUNNING" : "PAUSED");
 
     // --- Orbit Lines --- (Code remains the same)
-    const createOrbitLine = (radius, color, segments = 120) => { /* ... */
+    const createOrbitLine = (radius, color, segments = 120, materialOverride = null) => { /* ... */
       const points = [];
       for (let i = 0; i <= segments; i++) {
         const angle = (i / segments) * PI * 2;
         points.push(new THREE.Vector3(radius * cos(angle), 0, radius * sin(angle)));
       }
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.3 });
+      const material = materialOverride ?? new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.3 });
       return new THREE.Line(geometry, material);
     };
-    const moonOrbitLine = createOrbitLine(moonOrbitRadius, 0xaaaaaa);
-    // moon orbit line is tilted
-    moonOrbitLine.rotation.x = moonOrbitDeclination;
-    scene.add(moonOrbitLine);
+    const moonOrbitLine = createOrbitLine(moonOrbitRadius, 0xaaaaaa, 120, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
+    moonOrbitGroup.add(moonOrbitLine);
     const sunOrbitLine = createOrbitLine(sunOrbitRadius, 0xcccc66);
     scene.add(sunOrbitLine);
 
 
     // --- CONTROLS ---
     const playPauseBtn = document.getElementById('playPauseBtn');
-    const reverseBtn = document.getElementById('reverseBtn'); // Get reverse button
+    const reverseBtn = document.getElementById('reverseBtn');
+    const labelToggleBtn = document.getElementById("labelToggleBtn");
     const speedUpBtn = document.getElementById('speedUpBtn');
     const speedDownBtn = document.getElementById('speedDownBtn');
     const resetSpeedBtn = document.getElementById('resetSpeedBtn');
@@ -576,6 +642,21 @@
       updateSpeedDisplayAndButtons();
       updateDirectionButton(); // Update direction button text
     });
+
+    // ---- LABEL SHOW/HIDE TOGGLE ----
+    let labelsVisible = true;
+
+    labelToggleBtn.onclick = function () {
+      labelsVisible = !labelsVisible;
+      [nakshatraGroup, zodiacGroup].forEach(group => {
+        group.children.forEach(child => {
+          if (child.type === "Sprite") {
+            child.visible = labelsVisible;
+          }
+        });
+      });
+      labelToggleBtn.textContent = labelsVisible ? "Hide Labels" : "Show Labels";
+    };
 
     function handleKeyDown(event) { if (event.code === 'Space') { event.preventDefault(); togglePlayPause(); } }
     window.addEventListener('keydown', handleKeyDown);
@@ -665,66 +746,68 @@
 
       // Update sliders if not being dragged
       if (!isManualPositionActive) {
-        sunPositionSlider.value = sunDegrees;
-        moonPositionSlider.value = moonDegrees;
+        // sunPositionSlider.value = sunDegrees;
+        // moonPositionSlider.value = moonDegrees;
+        $("#sunKnob").val(sunDegrees).trigger('change');
+        $("#moonKnob").val(moonDegrees).trigger('change');
       }
       updateMoonPhaseDisplay(sunAngle, moonAngle); // Update moon phase
     }
 
-    // Handle slider changes
-    sunPositionSlider.addEventListener('input', function () {
-      // if (debug) console.log("Sun slider adjusted to:", this.value);
+    // // Handle slider changes
+    // sunPositionSlider.addEventListener('input', function () {
+    //   // if (debug) console.log("Sun slider adjusted to:", this.value);
 
-      // Store the current positions
-      manualSunPosition = parseFloat(this.value);
-      lastAdjustedObject = 'sun'; // Track that sun was last adjusted
+    //   // Store the current positions
+    //   manualSunPosition = parseFloat(this.value);
+    //   lastAdjustedObject = 'sun'; // Track that sun was last adjusted
 
-      // Update positions immediately
-      const sunAngle = degreesToRadians(manualSunPosition);
-      sun.position.set(sunOrbitRadius * cos(2 * PI - sunAngle), 0, sunOrbitRadius * sin(2 * PI - sunAngle));
-      sunLight.position.copy(sun.position);
+    //   // Update positions immediately
+    //   const sunAngle = degreesToRadians(manualSunPosition);
+    //   sun.position.set(sunOrbitRadius * cos(2 * PI - sunAngle), 0, sunOrbitRadius * sin(2 * PI - sunAngle));
+    //   sunLight.position.copy(sun.position);
 
-      // Update displays 
-      updatePositionDisplays();
+    //   // Update displays 
+    //   updatePositionDisplays();
 
-      // Pause animation if it's running
-      if (animateFlag) {
-        // if (debug) console.log("Pausing animation due to sun slider adjustment");
-        animateFlag = false;
-        updatePlayPauseButton();
-      }
+    //   // Pause animation if it's running
+    //   if (animateFlag) {
+    //     // if (debug) console.log("Pausing animation due to sun slider adjustment");
+    //     animateFlag = false;
+    //     updatePlayPauseButton();
+    //   }
 
-      manualSunAjustment = sunAngle - currentSunPosition();
-      if (manualSunAjustment < 0) {
-        manualSunAjustment += PI * 2;
-      }
-    });
+    //   manualSunAjustment = sunAngle - currentSunPosition();
+    //   if (manualSunAjustment < 0) {
+    //     manualSunAjustment += PI * 2;
+    //   }
+    // });
 
-    moonPositionSlider.addEventListener('input', function () {
-      // if (debug) console.log("Moon slider adjusted to:", this.value);
+    // moonPositionSlider.addEventListener('input', function () {
+    //   // if (debug) console.log("Moon slider adjusted to:", this.value);
 
-      // Store the current positions
-      manualMoonPosition = parseFloat(this.value);
-      lastAdjustedObject = 'moon'; // Track that moon was last adjusted
+    //   // Store the current positions
+    //   manualMoonPosition = parseFloat(this.value);
+    //   lastAdjustedObject = 'moon'; // Track that moon was last adjusted
 
-      // Update positions immediately
-      const moonAngle = degreesToRadians(manualMoonPosition);
-      moon.position.set(moonOrbitRadius * cos(2 * PI - moonAngle), 0, moonOrbitRadius * sin(2 * PI - moonAngle));
+    //   // Update positions immediately
+    //   const moonAngle = degreesToRadians(manualMoonPosition);
+    //   moon.position.set(moonOrbitRadius * cos(2 * PI - moonAngle), 0, moonOrbitRadius * sin(2 * PI - moonAngle));
 
-      // Update displays
-      updatePositionDisplays();
+    //   // Update displays
+    //   updatePositionDisplays();
 
-      // Pause animation if it's running
-      if (animateFlag) {
-        if (debug) console.log("Pausing animation due to moon sl ider adjustment");
-        animateFlag = false;
-        updatePlayPauseButton();
-      }
-      manualMoonAdjustment = moonAngle - currentMoonPosition();
-      if (manualMoonAdjustment < 0) {
-        manualMoonAdjustment += PI * 2;
-      }
-    });
+    //   // Pause animation if it's running
+    //   if (animateFlag) {
+    //     if (debug) console.log("Pausing animation due to moon sl ider adjustment");
+    //     animateFlag = false;
+    //     updatePlayPauseButton();
+    //   }
+    //   manualMoonAdjustment = moonAngle - currentMoonPosition();
+    //   if (manualMoonAdjustment < 0) {
+    //     manualMoonAdjustment += PI * 2;
+    //   }
+    // });
     // Handle play/pause button click
     playPauseBtn.addEventListener('click', function () {
       // Get the current button text to determine the current state
@@ -833,9 +916,9 @@
     const moonPhase3dRenderer = new THREE.WebGLRenderer({
       canvas: moonPhase3dCanvas,
       alpha: true,
-      antialias: true
+      antialias: true,
     });
-    moonPhase3dRenderer.setClearColor(0x111111, 0);
+    moonPhase3dRenderer.setClearColor(0x000000, 0);
 
     const moon3dScene = new THREE.Scene();
     const moon3dCamera = new THREE.PerspectiveCamera(24, 1, 0.1, 10);
@@ -922,7 +1005,77 @@
     animate();
     updatePositionDisplays();
   </script>
+  <script>
+    $(function () {
+      // SUN
+      $("#sunKnob").knob({
+        min: 0,
+        max: 360,
+        step: 1,
+        angleArc: 360,
+        angleOffset: 0,
+        width: 54,
+        height: 54,
+        fgColor: "#ffcc66",
+        bgColor: "#232344",
+        thickness: 0.32,
+        displayInput: false,
+        change: function (deg) {
+          manualSunPosition = deg;
+          lastAdjustedObject = 'sun';
+          const sunAngle = degreesToRadians(manualSunPosition);
+          sun.position.set(sunOrbitRadius * Math.cos(2 * Math.PI - sunAngle), 0, sunOrbitRadius * Math.sin(2 * Math.PI - sunAngle));
+          sunLight.position.copy(sun.position);
+          updatePositionDisplays();
+          if (animateFlag) {
+            animateFlag = false;
+            updatePlayPauseButton();
+          }
+          manualSunAjustment = sunAngle - currentSunPosition();
+          if (manualSunAjustment < 0) {
+            manualSunAjustment += Math.PI * 2;
+          }
+        }
+      });
 
+      // MOON
+      $("#moonKnob").knob({
+        min: 0,
+        max: 360,
+        step: 1,
+        angleArc: 360,
+        angleOffset: 0,
+        width: 54,
+        height: 54,
+        fgColor: "#aaccff",
+        bgColor: "#232344",
+        thickness: 0.32,
+        displayInput: false,
+        change: function (deg) {
+          manualMoonPosition = deg;
+          lastAdjustedObject = 'moon';
+          const moonAngle = degreesToRadians(manualMoonPosition);
+          moon.position.set(moonOrbitRadius * Math.cos(2 * Math.PI - moonAngle), 0, moonOrbitRadius * Math.sin(2 * Math.PI - moonAngle));
+          updatePositionDisplays();
+          if (animateFlag) {
+            animateFlag = false;
+            updatePlayPauseButton();
+          }
+          manualMoonAdjustment = moonAngle - currentMoonPosition();
+          if (manualMoonAdjustment < 0) {
+            manualMoonAdjustment += Math.PI * 2;
+          }
+        }
+      });
+
+      // OPTIONAL: Update knob value if you update sun/moon by code (sync knobs)
+      function syncKnobsToPositions() {
+        $("#sunKnob").val(manualSunPosition ?? 0).trigger('change');
+        $("#moonKnob").val(manualMoonPosition ?? 0).trigger('change');
+      }
+    });
+
+  </script>
 
 </body>
 
