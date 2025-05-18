@@ -746,69 +746,12 @@
 
       // Update sliders if not being dragged
       if (!isManualPositionActive) {
-        // sunPositionSlider.value = sunDegrees;
-        // moonPositionSlider.value = moonDegrees;
         $("#sunKnob").val(sunDegrees).trigger('change');
         $("#moonKnob").val(moonDegrees).trigger('change');
       }
       updateMoonPhaseDisplay(sunAngle, moonAngle); // Update moon phase
     }
 
-    // // Handle slider changes
-    // sunPositionSlider.addEventListener('input', function () {
-    //   // if (debug) console.log("Sun slider adjusted to:", this.value);
-
-    //   // Store the current positions
-    //   manualSunPosition = parseFloat(this.value);
-    //   lastAdjustedObject = 'sun'; // Track that sun was last adjusted
-
-    //   // Update positions immediately
-    //   const sunAngle = degreesToRadians(manualSunPosition);
-    //   sun.position.set(sunOrbitRadius * cos(2 * PI - sunAngle), 0, sunOrbitRadius * sin(2 * PI - sunAngle));
-    //   sunLight.position.copy(sun.position);
-
-    //   // Update displays 
-    //   updatePositionDisplays();
-
-    //   // Pause animation if it's running
-    //   if (animateFlag) {
-    //     // if (debug) console.log("Pausing animation due to sun slider adjustment");
-    //     animateFlag = false;
-    //     updatePlayPauseButton();
-    //   }
-
-    //   manualSunAjustment = sunAngle - currentSunPosition();
-    //   if (manualSunAjustment < 0) {
-    //     manualSunAjustment += PI * 2;
-    //   }
-    // });
-
-    // moonPositionSlider.addEventListener('input', function () {
-    //   // if (debug) console.log("Moon slider adjusted to:", this.value);
-
-    //   // Store the current positions
-    //   manualMoonPosition = parseFloat(this.value);
-    //   lastAdjustedObject = 'moon'; // Track that moon was last adjusted
-
-    //   // Update positions immediately
-    //   const moonAngle = degreesToRadians(manualMoonPosition);
-    //   moon.position.set(moonOrbitRadius * cos(2 * PI - moonAngle), 0, moonOrbitRadius * sin(2 * PI - moonAngle));
-
-    //   // Update displays
-    //   updatePositionDisplays();
-
-    //   // Pause animation if it's running
-    //   if (animateFlag) {
-    //     if (debug) console.log("Pausing animation due to moon sl ider adjustment");
-    //     animateFlag = false;
-    //     updatePlayPauseButton();
-    //   }
-    //   manualMoonAdjustment = moonAngle - currentMoonPosition();
-    //   if (manualMoonAdjustment < 0) {
-    //     manualMoonAdjustment += PI * 2;
-    //   }
-    // });
-    // Handle play/pause button click
     playPauseBtn.addEventListener('click', function () {
       // Get the current button text to determine the current state
       const currentButtonText = playPauseBtn.textContent;
