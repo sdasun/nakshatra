@@ -25,25 +25,157 @@
 
     #controls-container {
       position: absolute;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
-      gap: 15px;
-      padding: 12px 20px;
-      background: rgba(30, 30, 50, 0.85);
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      background: rgba(32, 32, 56, 0.95);
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
       z-index: 100;
-      align-items: center;
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
+      padding: 12px 16px 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 300px;
+      font-size: 14px;
+      user-select: none;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
 
-    .control-group {
+    .control-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 9px;
+    }
+
+    .speed-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: 8px;
+      padding-left: 10px;
+      border-left: 1.5px solid rgba(255, 255, 255, 0.10);
+    }
+
+    button {
+      padding: 5px 8px;
+      min-width: 32px;
+      font-size: 15px;
+      background: #43436a;
+      border: none;
+      border-radius: 6px;
+      color: #f6f6fa;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.18s, transform 0.09s;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.13);
+    }
+
+    button:active {
+      background: #292946;
+    }
+
+    button:hover {
+      background: #606096;
+    }
+
+    button:disabled {
+      background: #232344;
+      color: #8888aa;
+      cursor: not-allowed;
+    }
+
+    #speedDisplay {
+      font-size: 14px;
+      color: #ffd;
+      background: none;
+      min-width: 90px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      border: none;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .knob-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      background: rgba(18, 19, 34, 0.85);
+      border-radius: 8px;
+      margin-right: 8px;
+      box-shadow: 0 0 2px 0 rgba(80, 80, 120, 0.07);
+      margin-bottom: 6px;
+    }
+
+    .knob-label {
+      font-size: 20px;
+      font-weight: 700;
+      width: 26px;
+      text-align: center;
+      opacity: 0.9;
+      margin-right: 1px;
+    }
+
+    .knob-label.sun {
+      color: #ffec94;
+      font-size: 48px;
+      line-height: 24px;
+      min-width: 48px;
+    }
+
+    .knob-label.moon {
+      color: #aaccff;
+      font-size: 28px;
+      line-height: 24px;
+      min-width: 48px;
+    }
+
+    .knob-pos {
+      min-width: 110px;
+      font-size: 13px;
+      color: #ffec94;
+      background: none;
+      margin-left: 1px;
+    }
+
+    .knob-pos.moon {
+      color: #aaccff;
+    }
+
+    #sunKnob,
+    #moonKnob {
+      width: 45px;
+      height: 45px;
+      display: inline-block;
+      margin: 0;
+    }
+
+    @media (max-width: 600px) {
+      #controls-container {
+        min-width: unset;
+        left: 50%;
+        width: 99vw;
+        padding: 6px 3vw 8px 3vw;
+        border-radius: 12px;
+      }
+
+      .knob-group {
+        flex-direction: column;
+        gap: 3px;
+        padding: 3px 3px;
+      }
+
+      .control-row {
+        flex-wrap: wrap;
+      }
+
+      .speed-group {
+        border: none;
+        margin-left: 0;
+      }
     }
 
     button {
@@ -133,36 +265,33 @@
 
     <span id="moon-phase-name">Loading...</span>
   </div>
+  <!-- CONTROLS (compact, modern look) -->
   <div id="controls-container">
-    <div class="control-group">
-      <button id="playPauseBtn">Pause</button>
-    </div>
-    <div class="control-group">
-      <button id="reverseBtn" title="Toggle Direction">Forward</button>
-    </div>
-    <div class="control-group">
-      <button id="labelToggleBtn" style="min-width:80px;">Hide Labels</button>
-    </div>
-    <div class="control-group">
-      <button id="speedDownBtn" title="Slower">-</button>
-      <span id="speedDisplay">Speed: 1s = 1 Day</span>
-      <button id="speedUpBtn" title="Faster">+</button>
-      <button id="resetSpeedBtn" title="Reset Speed">Reset</button>
-    </div>
-    <div class="control-group" style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="min-width: 40px; color: #ffcc66;">Sun:</span>
-        <input type="text" id="sunKnob" value="0" style="width:54px;height:54px;display:inline-block;">
-        <span id="sunPositionText" style="font-size: 18px; color: #ffcc66; min-width: 150px;"></span>
+    <div class="control-row">
+      <button id="playPauseBtn" title="Play/Pause">⏸︎</button>
+      <button id="reverseBtn" title="Reverse Direction">⇄</button>
+      <button id="labelToggleBtn" title="Show/Hide Labels">🔤</button>
+      <div class="speed-group">
+        <button id="speedDownBtn" title="Slower">–</button>
+        <span id="speedDisplay">1s = 1 Day</span>
+        <button id="speedUpBtn" title="Faster">+</button>
+        <button id="resetSpeedBtn" title="Reset Speed">⟳</button>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="min-width: 40px; color: #aaccff;">Moon:</span>
-        <input type="text" id="moonKnob" value="0" style="width:54px;height:54px;display:inline-block;">
-        <span id="moonPositionText" style="font-size: 18px; color: #aaccff; min-width: 150px;"></span>
+    </div>
+    <div class="control-row" style="margin-top: 6px;">
+      <div class="knob-group">
+        <span class="knob-label sun">☉</span>
+        <input type="text" id="sunKnob" value="0">
+        <span id="sunPositionText" class="knob-pos sun"></span>
       </div>
-
+      <div class="knob-group">
+        <span class="knob-label moon">☾</span>
+        <input type="text" id="moonKnob" value="0">
+        <span id="moonPositionText" class="knob-pos moon"></span>
+      </div>
     </div>
   </div>
+
   <a class="logo" href="https://tharukirana.com" target="_blank"
     style="position: absolute; top: 10px; left: 10px; z-index: 100; display: flex; align-items: center; text-decoration: none; gap: 10px;">
     <img src="/images/tharukirana_logo_small2.png" alt="Tharu Kirana Logo" title="Tharu Kirana Logo"
@@ -756,15 +885,10 @@
       "අමාවක"
     ];
 
-    // This function is no longer used, but kept for reference
-    function updatePlayPauseButton() {
-      playPauseBtn.textContent = animateFlag ? 'Pause' : 'Play';
-      if (debug) console.log("Button text updated to:", playPauseBtn.textContent);
-    }
     function updateDirectionButton() { // Function to update reverse button text
-      reverseBtn.textContent = speedDirection > 0 ? 'Forward' : 'Reverse';
+      reverseBtn.textContent = speedDirection > 0 ? '←' : '→';
     }
-    function togglePlayPause() { animateFlag = !animateFlag; updatePlayPauseButton(); }
+    function togglePlayPause() { animateFlag = !animateFlag; }
     function toggleDirection() { // Function to toggle direction
       speedDirection *= -1;
       updateDirectionButton();
@@ -772,7 +896,7 @@
     }
     function updateSpeedDisplayAndButtons() {
       const currentPreset = speedPresets[currentSpeedIndex];
-      const directionLabel = speedDirection < 0 ? ' (Reverse)' : ''; // Add label for reverse
+      const directionLabel = speedDirection < 0 ? ' ⏴︎' : ' ⏵︎'; // Add label for reverse
       speedDisplay.textContent = `Speed: ${currentPreset.label}${directionLabel}`;
       speedDownBtn.disabled = currentSpeedIndex === 0;
       speedUpBtn.disabled = currentSpeedIndex === speedPresets.length - 1;
@@ -801,14 +925,17 @@
           }
         });
       });
-      labelToggleBtn.textContent = labelsVisible ? "Hide Labels" : "Show Labels";
+      // Always set button text based on state
+      labelToggleBtn.textContent = labelsVisible ? "🔤" : "✖️";
+      labelToggleBtn.title = labelsVisible ? "Hide Labels" : "Show Labels";
     };
+
 
     function handleKeyDown(event) { if (event.code === 'Space') { event.preventDefault(); togglePlayPause(); } }
     window.addEventListener('keydown', handleKeyDown);
 
     // Initial UI setup
-    playPauseBtn.textContent = animateFlag ? 'Pause' : 'Play';
+    playPauseBtn.textContent = animateFlag ? '⏸︎' : '⏵︎';
     console.log("Initial button text set to:", playPauseBtn.textContent);
     updateDirectionButton();
     updateSpeedDisplayAndButtons();
@@ -900,17 +1027,15 @@
       const currentButtonText = playPauseBtn.textContent;
       console.log("Play/Pause button clicked. Current button text:", currentButtonText);
 
-      if (currentButtonText === "Pause") {
+      if (currentButtonText === "⏸︎") {
         // Button says "Pause", so we're currently running and want to pause
         console.log("Pausing animation");
         animateFlag = false;
-        playPauseBtn.textContent = "Play";
+        playPauseBtn.textContent = "⏵︎";
       } else {
-        // Button says "Play", so we're currently paused and want to resume
         console.log("Resuming animation");
-
         animateFlag = true;
-        playPauseBtn.textContent = "Pause";
+        playPauseBtn.textContent = "⏸︎";
       }
 
       console.log("New animation state:", animateFlag ? "RUNNING" : "PAUSED");
