@@ -199,6 +199,8 @@
     const ZODIAC_ARC_RADIANS = -(2 * PI) / ZODIAC_COUNT;
     const earthRadius = 2;
     const moonOrbitRadius = earthRadius * 3.5;
+    const moonOrbitDeclination = degreesToRadians(-5);
+    const sunOrbitDeclination = degreesToRadians(23.45);
     const zodiacInnerRadius = 21;
     const zodiacOuterRadius = 23;
     const nakshatraInnerRadius = 23
@@ -332,7 +334,26 @@
     const earthTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
     const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture, roughness: 0.7, metalness: 0.1 });
     const earth = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthMaterial);
+    // 23.45 degrees tilt
+    earth.rotation.x = degreesToRadians(sunOrbitDeclination);
     scene.add(earth);
+
+    // earth equator ring 
+    const earthEquatorGeometry = new THREE.RingGeometry(earthRadius, earthRadius * 1.1, 64);
+    const earthEquatorMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+    const earthEquator = new THREE.Mesh(earthEquatorGeometry, earthEquatorMaterial);
+    earthEquator.rotation.x = -PI / 2;
+    earthEquator.position.set(0, 0, 0);
+    scene.add(earthEquator);
+
+    // add earth polar axis
+    const earthAxisGeometry = new THREE.CylinderGeometry(0.075, 0.075, earthRadius * 2.3, 32);
+    const earthAxisMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const earthAxis = new THREE.Mesh(earthAxisGeometry, earthAxisMaterial);
+    earthAxis.rotation.x = degreesToRadians(23.45);
+    earthAxis.rotation.y = -PI / 2;
+    earthAxis.position.set(0, 0, 0);
+    scene.add(earthAxis);
 
     const sunTexture = textureLoader.load('/images/sun.png');
     const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture, toneMapped: false });
@@ -443,7 +464,7 @@
     let lastAdjustedObject = null; // Track which object was last adjusted
 
     // Debug flag
-    const debug = true; // Set to true to enable console logs
+    const debug = false; // Set to true to enable console logs
 
     // Log initial state
     console.log("Initial animation state:", animateFlag ? "RUNNING" : "PAUSED");
@@ -460,6 +481,8 @@
       return new THREE.Line(geometry, material);
     };
     const moonOrbitLine = createOrbitLine(moonOrbitRadius, 0xaaaaaa);
+    // moon orbit line is tilted
+    moonOrbitLine.rotation.x = moonOrbitDeclination;
     scene.add(moonOrbitLine);
     const sunOrbitLine = createOrbitLine(sunOrbitRadius, 0xcccc66);
     scene.add(sunOrbitLine);
