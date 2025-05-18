@@ -360,10 +360,9 @@
     earthGroup.rotation.x = OBLIQUITY;
 
     // --- Earth equator ring (added to group so it tilts with earth) ---
-    const earthEquatorGeometry = new THREE.RingGeometry(earthRadius, earthRadius * 1.1, 64);
+    const earthEquatorGeometry = new THREE.CylinderGeometry(earthRadius, earthRadius * 1.1, 0.1, 120);
     const earthEquatorMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
     const earthEquator = new THREE.Mesh(earthEquatorGeometry, earthEquatorMaterial);
-    earthEquator.rotation.x = -PI / 2;
     earthEquator.position.set(0, 0, 0);
     earthGroup.add(earthEquator);
 
@@ -543,10 +542,39 @@
 
     // --- Camera Preset Buttons ---
     const viewPresets = [
-      { label: "Top", polar: 0.21 * Math.PI, azimuth: 0 },
+      { label: "Top", polar: 0, azimuth: 0 },
       { label: "Side", polar: Math.PI / 2, azimuth: 0 },
-      { label: "Bottom", polar: Math.PI - 0.21 * Math.PI, azimuth: 0 },
-      { label: "Oblique", polar: Math.PI / 3, azimuth: Math.PI / 4 }
+      { label: "Bottom", polar: Math.PI, azimuth: 0 },
+      { label: "Oblique", polar: Math.PI / 3, azimuth: Math.PI / 4 },
+      { label: "North", polar: Math.PI / 2, azimuth: Math.PI / 2 },
+      { label: "South", polar: Math.PI / 2, azimuth: -Math.PI / 2 },
+      { label: "West", polar: Math.PI / 2, azimuth: Math.PI },
+      { label: "East", polar: Math.PI / 2, azimuth: 0 },
+      // --- NEW: Earth Equator Horizontal preset ---
+      {
+        label: "Equator",
+        handler: function () {
+          // Update earthGroup's world matrix
+          earthGroup.updateWorldMatrix(true, false);
+
+          // Earth's world position (center)
+          const earthWorldPos = new THREE.Vector3();
+          earthGroup.getWorldPosition(earthWorldPos);
+
+          // Earth's north (local +Y) in world coordinates
+          const north = new THREE.Vector3(0, 1, 0).applyMatrix4(earthGroup.matrixWorld).sub(earthWorldPos).normalize();
+
+          // Earth's equator direction (local +X) in world coordinates
+          const equatorDir = new THREE.Vector3(1, 0, 0).applyMatrix4(earthGroup.matrixWorld).sub(earthWorldPos).normalize();
+
+          // Set camera position along equator, look at center, set up to north
+          const distance = camRadius;
+          camera.position.copy(equatorDir.multiplyScalar(distance));
+          camera.lookAt(earthWorldPos);
+          camera.up.copy(north);
+          camera.updateProjectionMatrix();
+        }
+      }
     ];
 
     // Insert preset buttons into the controls panel
@@ -556,16 +584,21 @@
     presetDiv.style.borderLeft = "1px solid rgba(255,255,255,0.2)";
     presetDiv.style.paddingLeft = "10px";
     presetDiv.style.gap = "7px";
-    viewPresets.forEach(preset => {
+    viewPresets.forEach((preset, idx) => {
       const btn = document.createElement("button");
       btn.textContent = preset.label;
       btn.onclick = () => {
-        camPolar = preset.polar;
-        camAzimuth = preset.azimuth;
-        updateCameraPosition();
+        if (preset.handler) {
+          preset.handler();
+        } else {
+          camPolar = preset.polar;
+          camAzimuth = preset.azimuth;
+          updateCameraPosition();
+        }
       };
       presetDiv.appendChild(btn);
     });
+
     controls.appendChild(presetDiv);
 
     // --- Keyboard shortcuts for camera view presets ---
