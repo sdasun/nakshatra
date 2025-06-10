@@ -931,8 +931,27 @@
     };
 
 
-    function handleKeyDown(event) { if (event.code === 'Space') { event.preventDefault(); togglePlayPause(); } }
+    function handleKeyDown(event) {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        togglePlayPause();
+      }
+      if (event.code === 'Tab') {
+        event.preventDefault();
+        toggleControlsVisibility();
+      }
+    }
     window.addEventListener('keydown', handleKeyDown);
+
+    // Function to toggle controls visibility
+    function toggleControlsVisibility() {
+      const controlsContainer = document.getElementById('controls-container');
+      if (controlsContainer.style.display === 'none') {
+        controlsContainer.style.display = 'flex';
+      } else {
+        controlsContainer.style.display = 'none';
+      }
+    }
 
     // Initial UI setup
     playPauseBtn.textContent = animateFlag ? '⏸︎' : '⏵︎';
